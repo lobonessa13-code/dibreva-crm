@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA - Configurações</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay"></div>
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>Configurações</h1>
+    </div>
+
+    <!-- Conexão -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <h3>Conexão com Supabase</h3>
+        <span class="badge" id="connection-badge" style="display:none;">—</span>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--cinza); margin-bottom: 16px; font-size: 14px;">
+          Verifique se a conexão com o banco de dados está funcionando.
+        </p>
+        <button class="btn btn-primary" onclick="testConnection()">Testar Conexão</button>
+        <div id="connection-result" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
+    <!-- Migração -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <h3>Migração dos 38 Clientes</h3>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--cinza); margin-bottom: 8px; font-size: 14px;">
+          Importa os 38 clientes do dashboard antigo para o novo sistema CRM.
+          Esta operação deve ser executada <strong>uma única vez</strong>.
+        </p>
+        <p style="color: var(--cinza); margin-bottom: 16px; font-size: 13px;">
+          Mapeamento de status: Contato inicial → Lead · Informe externo → Lead · Aguardando Retorno → Visita Técnica · Envio da proposta → Orçamento Enviado · Negação externa → Perdido
+        </p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="btn btn-primary" id="btn-migrar" onclick="migrarClientes()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Migrar 38 Clientes
+          </button>
+          <span id="migration-status" style="font-size: 13px; color: var(--cinza);"></span>
+        </div>
+
+        <!-- Log de migração -->
+        <div id="migration-log" style="margin-top: 16px; display: none;">
+          <div style="background: var(--bg); border-radius: var(--radius-sm); padding: 16px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.8;" id="log-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQL Schema -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3>SQL do Banco de Dados</h3>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--cinza); margin-bottom: 16px; font-size: 14px;">
+          Se o banco ainda não foi configurado, copie o SQL abaixo e execute no
+          <a href="https://supabase.com/dashboard" target="_blank" style="color: var(--laranja);">Supabase SQL Editor</a>.
+        </p>
+        <button class="btn btn-secondary" onclick="copiarSQL()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copiar SQL para Clipboard
+        </button>
+        <p style="margin-top: 8px; font-size: 12px; color: var(--cinza);" id="sql-copy-msg"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/supabase-config.js?v=5"></script>
+  <script src="js/db.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/nav.js?v=5"></script>
+  <script>
+    document.getElementById('sidebar').innerHTML = renderSidebar('setup');
+
+    // Testar conexão
+    async function testConnection() {
+      const result = document.getElementById('connection-result');
+      const badge = document.getElementById('connection-badge');
+      result.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const ok = await checkConnection();
+        if (ok) {
+          result.innerHTML = '<span style="color: var(--success); font-weight: 600;">Conectado com sucesso!</span>';
+          badge.textContent = 'Online';
+          badge.className = 'badge badge-aprovado';
+          badge.style.display = '';
+        } else {
+          throw new Error('Falha na conexão');
+        }
+      } catch (err) {
+        result.innerHTML = `<span style="color: var(--danger); font-weight: 600;">Erro: ${err.message}</span><br><small style="color: var(--cinza);">Verifique SUPABASE_URL e SUPABASE_KEY em js/supabase-config.js</small>`;
+        badge.textContent = 'Offline';
+        badge.className = 'badge badge-perdido';
+        badge.style.display = '';
+      }
+    }
+
+    // Dados dos 38 clientes para migração
+    const clientesLegados = [
+      { nome: "Cristiano", condominio: "Edf Edmar - Ararangua", servico: "Informe externo", telefone: "49 00048-3068", statusLegado: "Aguardando Retorno" },
+      { nome: "Lara e Mauricio", condominio: "Gabieno", servico: "Informe externo", telefone: "", statusLegado: "Contato inicial" },
+      { nome: "Rosa", condominio: "Agrima Freitas", servico: "Informe externo", telefone: "49 99813-0536", statusLegado: "Aguardando Retorno" },
+      { nome: "Henrique / Giovane", condominio: "ACIC", servico: "", telefone: "49 90649-8722", statusLegado: "Aguardando Retorno" },
+      { nome: "Thiago", condominio: "Centenario", servico: "Informe externo", telefone: "48 99635-2041", statusLegado: "Aguardando Retorno" },
+      { nome: "Mindset", condominio: "Baldissera", servico: "Informe externo", telefone: "48 99929-2182", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Bambuca - Ainoas", servico: "", telefone: "", statusLegado: "Envio da proposta" },
+      { nome: "Jorge", condominio: "Fontana di Trevi", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Devale - Ararangua", servico: "", telefone: "", statusLegado: "Envio da proposta" },
+      { nome: "Mindset - Mabiano", condominio: "Del Rey", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Gabriela", servico: "", telefone: "", statusLegado: "Negacao externa" },
+      { nome: "Edmilson", condominio: "Simone", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Gustavo", condominio: "Vanessa", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Nadir Ferreira - Sao Joaquim", servico: "", telefone: "", statusLegado: "Envio da proposta" },
+      { nome: "Rafaela", condominio: "Felicita", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Giacomo Mazuco", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Jaque", condominio: "Igreja Linha Cabral", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Luiz", condominio: "La Venta", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Lidi Camargo", condominio: "Le Village", servico: "Informe externo", telefone: "48 99062-3811", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Marigold - Ararangua", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Richard", condominio: "Mistral", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Erika", condominio: "Moinhos do Vento", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Monte Carlo - Rincao", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Eduarda", condominio: "Mont Royal", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Edison", condominio: "Outo Preto", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Mindset", condominio: "Porto Fino", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Di Rosa - Ararangua", servico: "", telefone: "", statusLegado: "Contato inicial" },
+      { nome: "Carlito", condominio: "Heineman - Ararangua", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Antonio", condominio: "Rocha - Maccaer", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Reserva Residence - Arroio", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Mindset", condominio: "San Marine", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Sidica Serra Dourada", condominio: "Serra Dourada", servico: "", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Carlito", condominio: "Solar das Avenidas - Ararangua", servico: "Informe externo", telefone: "", statusLegado: "Contato inicial" },
+      { nome: "Simone", condominio: "Trevisan", servico: "Informe externo", telefone: "", statusLegado: "Informe externo" },
+      { nome: "Celso", condominio: "Vinicio Leal", servico: "", telefone: "48 98404-4834", statusLegado: "Contato inicial" },
+      { nome: "Francielle", condominio: "Vogue - Ararangua", servico: "Informe externo", telefone: "48 99429-6880", statusLegado: "Envio da proposta" },
+      { nome: "Zelir", condominio: "Quatro Estacoes - Bal. Camboriu", servico: "Informe externo", telefone: "47 99968-2351", statusLegado: "Informe externo" },
+      { nome: "Rodrigo", condominio: "San Felice - Cocal do Sul", servico: "Informe externo", telefone: "48 99924-5474", statusLegado: "Contato inicial" }
+    ];
+
+    // Mapear status antigo → novo pipeline
+    function mapStatus(statusLegado) {
+      const map = {
+        'Contato inicial': 'lead',
+        'Informe externo': 'lead',
+        'Aguardando Retorno': 'visita_tecnica',
+        'Envio da proposta': 'orcamento_enviado',
+        'Negacao externa': 'perdido'
+      };
+      return map[statusLegado] || 'lead';
+    }
+
+    // Extrair cidade do nome do condomínio (ex: "Devale - Ararangua" → "Ararangua")
+    function extrairCidade(condominio) {
+      const parts = condominio.split(' - ');
+      if (parts.length > 1) return parts[parts.length - 1].trim();
+      return 'Criciúma'; // Default para região
+    }
+
+    // Mapear próxima ação baseada no status
+    function mapProximaAcao(statusLegado) {
+      const map = {
+        'Contato inicial': 'Fazer primeiro contato',
+        'Informe externo': 'Enviar informe / agendar visita',
+        'Aguardando Retorno': 'Aguardar retorno do cliente',
+        'Envio da proposta': 'Acompanhar proposta enviada',
+        'Negacao externa': 'Arquivado'
+      };
+      return map[statusLegado] || 'Contato inicial';
+    }
+
+    // Executar migração
+    async function migrarClientes() {
+      const btn = document.getElementById('btn-migrar');
+      const status = document.getElementById('migration-status');
+      const logDiv = document.getElementById('migration-log');
+      const logContent = document.getElementById('log-content');
+
+      btn.disabled = true;
+      logDiv.style.display = 'block';
+      logContent.innerHTML = '';
+      status.textContent = 'Migrando...';
+
+      function log(msg, type = 'info') {
+        const colors = { info: 'var(--azul)', success: 'var(--success)', error: 'var(--danger)', warn: 'var(--warning)' };
+        logContent.innerHTML += `<div style="color: ${colors[type]}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        logContent.scrollTop = logContent.scrollHeight;
+      }
+
+      try {
+        // Verificar conexão
+        log('Verificando conexão com Supabase...');
+        const connected = await checkConnection();
+        if (!connected) throw new Error('Sem conexão com Supabase');
+        log('Conexão OK!', 'success');
+
+        // Verificar se já existem leads
+        const existingCount = await DB.count('leads');
+        if (existingCount > 0) {
+          log(`ATENÇÃO: Já existem ${existingCount} leads no banco!`, 'warn');
+          if (!confirm(`Já existem ${existingCount} leads no banco. Deseja continuar a migração mesmo assim? (os dados NÃO serão duplicados se os condomínios já existirem)`)) {
+            log('Migração cancelada pelo usuário', 'warn');
+            btn.disabled = false;
+            status.textContent = 'Cancelada';
+            return;
+          }
+        }
+
+        // Preparar registros
+        log(`Preparando ${clientesLegados.length} registros para migração...`);
+
+        const registros = clientesLegados.map(c => ({
+          condominio: c.condominio,
+          cidade: extrairCidade(c.condominio),
+          tipo_servico: c.servico || 'Informe externo',
+          valor_estimado: 0,
+          status: mapStatus(c.statusLegado),
+          proxima_acao: mapProximaAcao(c.statusLegado),
+          nome_contato: c.nome || null,
+          telefone: c.telefone || null,
+          probabilidade: mapStatus(c.statusLegado) === 'perdido' ? 0 : 20
+        }));
+
+        // Inserir em lotes
+        log('Inserindo leads no banco...');
+        const result = await DB.bulkCreate('leads', registros);
+        log(`${result.length} leads migrados com sucesso!`, 'success');
+
+        // Resumo
+        const statusCount = {};
+        result.forEach(r => statusCount[r.status] = (statusCount[r.status] || 0) + 1);
+        log('--- Resumo da Migração ---', 'info');
+        Object.entries(statusCount).forEach(([s, c]) => {
+          log(`  ${s}: ${c} leads`, 'info');
+        });
+
+        status.textContent = `Concluída! ${result.length} leads migrados.`;
+        status.style.color = 'var(--success)';
+        UI.success(`Migração concluída! ${result.length} leads importados.`);
+
+      } catch (err) {
+        log(`ERRO: ${err.message}`, 'error');
+        status.textContent = 'Erro na migração';
+        status.style.color = 'var(--danger)';
+        UI.error('Erro na migração: ' + err.message);
+      }
+
+      btn.disabled = false;
+    }
+
+    // Copiar SQL
+    async function copiarSQL() {
+      const sql = `-- Execute este SQL no Supabase SQL Editor
+-- Veja o arquivo completo em: sql/schema.sql
+
+-- 1. Criar tabelas: leads, obras, receitas, despesas
+-- 2. Triggers: updated_at automático
+-- 3. Trigger: data_previsao_fim calculada
+-- 4. Função: converter_lead_em_obra (atômica)
+-- 5. Views: KPIs de CRM, Obras, Financeiro
+-- 6. RLS: Habilitado com política aberta
+-- 7. Índices: Performance otimizada
+
+-- Copie o conteúdo completo de sql/schema.sql
+-- e cole no SQL Editor do Supabase.`;
+
+      try {
+        // Tentar buscar o SQL completo via fetch (funciona se servido por http-server)
+        const resp = await fetch('sql/schema.sql');
+        if (resp.ok) {
+          const fullSql = await resp.text();
+          await navigator.clipboard.writeText(fullSql);
+          document.getElementById('sql-copy-msg').textContent = 'SQL completo copiado para o clipboard!';
+          document.getElementById('sql-copy-msg').style.color = 'var(--success)';
+          UI.success('SQL copiado!');
+          return;
+        }
+      } catch {}
+
+      // Fallback
+      await navigator.clipboard.writeText(sql);
+      document.getElementById('sql-copy-msg').textContent = 'Instruções copiadas. Para o SQL completo, abra o arquivo sql/schema.sql';
+      document.getElementById('sql-copy-msg').style.color = 'var(--warning)';
+    }
+  </script>
+</body>
+</html>

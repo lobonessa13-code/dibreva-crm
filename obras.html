@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA - Obras</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay"></div>
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>Obras</h1>
+      <div class="page-header-actions">
+        <button class="btn btn-primary" onclick="OBRAS.openNew()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Obra
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Em Andamento</div><div class="kpi-value warning" id="kpi-andamento">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Finalizadas</div><div class="kpi-value success" id="kpi-finalizadas">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Valor em Execução</div><div class="kpi-value" id="kpi-valor-exec">—</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="OBRAS.switchTab('board')">Board</button>
+      <button class="tab-btn" onclick="OBRAS.switchTab('tabela')">Tabela</button>
+    </div>
+
+    <!-- Tab: Board -->
+    <div class="tab-content active" id="tab-board">
+      <div class="pipeline pipeline-3col" id="board-container"></div>
+    </div>
+
+    <!-- Tab: Tabela -->
+    <div class="tab-content" id="tab-tabela">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input type="text" class="search-input" id="search-obras" placeholder="Buscar obra..." oninput="OBRAS.renderTable()">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Condomínio</th>
+              <th>CNPJ</th>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Início</th>
+              <th>Prazo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="obras-table-body"></tbody>
+        </table>
+        <div class="table-pagination" id="obras-pagination"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Obra -->
+  <div class="modal-overlay" id="modal-obra">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-obra-title">Nova Obra</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-obra')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="obra-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Condomínio <span class="required">*</span></label>
+            <input type="text" class="form-control" id="obra-condominio" required>
+          </div>
+          <div class="form-group">
+            <label>Cliente <span class="required">*</span></label>
+            <input type="text" class="form-control" id="obra-cliente" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>CNPJ</label>
+            <input type="text" class="form-control" id="obra-cnpj" placeholder="00.000.000/0000-00" oninput="mascaraCNPJ(this)">
+          </div>
+          <div class="form-group">
+            <label>Cidade</label>
+            <input type="text" class="form-control" id="obra-cidade">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Valor Fechado (R$) <span class="required">*</span></label>
+            <input type="number" class="form-control" id="obra-valor" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data de Início</label>
+            <input type="date" class="form-control" id="obra-data-inicio">
+          </div>
+          <div class="form-group">
+            <label>Prazo (dias)</label>
+            <input type="number" class="form-control" id="obra-prazo" value="90" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="obra-status">
+            <option value="planejamento">Planejamento</option>
+            <option value="em_execucao">Em Execução</option>
+            <option value="finalizada">Finalizada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea class="form-control" id="obra-observacoes" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-obra')">Cancelar</button>
+        <button class="btn btn-primary" onclick="OBRAS.save()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Financeiro da Obra -->
+  <div class="modal-overlay" id="modal-obra-financeiro">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 id="modal-fin-title">Financeiro da Obra</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-obra-financeiro')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-fin-body">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js?v=5"></script>
+  <script src="js/db.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/nav.js?v=5"></script>
+  <script src="js/obras.js?v=5"></script>
+  <script>
+    document.getElementById('sidebar').innerHTML = renderSidebar('obras');
+    OBRAS.init();
+
+    function mascaraCNPJ(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 14);
+      if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+      else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+      else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+      input.value = v;
+    }
+  </script>
+</body>
+</html>

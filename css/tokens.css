@@ -1,0 +1,46 @@
+/* ===== DIBREVA Brand Tokens ===== */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Cores Primárias */
+  --laranja: #D46250;
+  --laranja-hover: #C0574A;
+  --laranja2: #D37E53;
+  --azul: #1D2A3A;
+  --azul-light: #2A3D52;
+  --cinza: #A6B0B3;
+  --cinza-light: #C8CED0;
+  --cinza-bg: #EEF1F2;
+  --white: #FFFFFF;
+  --bg: #F4F6F7;
+
+  /* Status */
+  --success: #2D8E5E;
+  --success-bg: rgba(45,142,94,0.08);
+  --warning: #E5A100;
+  --warning-bg: rgba(229,161,0,0.08);
+  --danger: #C43B3B;
+  --danger-bg: rgba(196,59,59,0.08);
+  --info: #3A7BBF;
+  --info-bg: rgba(58,123,191,0.08);
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(29,42,58,0.07);
+  --shadow-md: 0 4px 14px rgba(29,42,58,0.1);
+  --shadow-lg: 0 10px 30px rgba(29,42,58,0.14);
+
+  /* Bordas */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+
+  /* Tipografia */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: Calibri, 'Segoe UI', Tahoma, sans-serif;
+
+  /* Transições */
+  --transition: 0.2s ease;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+}

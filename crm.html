@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA CRM - Pipeline de Vendas</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Mobile Toggle -->
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1>CRM — Pipeline de Vendas</h1>
+      <div class="page-header-actions">
+        <button class="btn btn-secondary" onclick="CRM.exportCSV()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
+        <button class="btn btn-primary" onclick="CRM.openNew()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Lead
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Leads Ativos</div><div class="kpi-value" id="kpi-leads">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Previsão Faturamento</div><div class="kpi-value" id="kpi-previsao">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Em Negociação</div><div class="kpi-value warning" id="kpi-negociacao">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Aprovados no Mês</div><div class="kpi-value success" id="kpi-aprovados">—</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="CRM.switchTab('pipeline')">Pipeline</button>
+      <button class="tab-btn" onclick="CRM.switchTab('tabela')">Tabela</button>
+      <button class="tab-btn" onclick="CRM.switchTab('graficos')">Gráficos</button>
+    </div>
+
+    <!-- Tab: Pipeline Kanban -->
+    <div class="tab-content active" id="tab-pipeline">
+      <div class="pipeline" id="pipeline-container"></div>
+    </div>
+
+    <!-- Tab: Tabela -->
+    <div class="tab-content" id="tab-tabela">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input type="text" class="search-input" id="search-input" placeholder="Buscar condomínio, contato..." oninput="CRM.filterTable()">
+          <select class="filter-select" id="filter-status" onchange="CRM.filterTable()">
+            <option value="todos">Todos os status</option>
+            <option value="lead">Lead</option>
+            <option value="visita_tecnica">Visita Técnica</option>
+            <option value="orcamento_enviado">Orçamento Enviado</option>
+            <option value="negociacao">Negociação</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th onclick="CRM.sort('condominio')">Condomínio &#8597;</th>
+              <th onclick="CRM.sort('cidade')">Cidade &#8597;</th>
+              <th onclick="CRM.sort('nome_contato')">Contato &#8597;</th>
+              <th onclick="CRM.sort('valor_estimado')">Valor &#8597;</th>
+              <th onclick="CRM.sort('status')">Status</th>
+              <th onclick="CRM.sort('proxima_acao')">Próxima Ação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="table-pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Gráficos -->
+    <div class="tab-content" id="tab-graficos">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Distribuição por Status</h3>
+          <canvas id="chart-status"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Valor Estimado por Cidade</h3>
+          <canvas id="chart-cidades"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Lead -->
+  <div class="modal-overlay" id="modal-lead">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-lead-title">Novo Lead</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-lead')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="lead-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Condomínio <span class="required">*</span></label>
+            <input type="text" class="form-control" id="lead-condominio" required>
+          </div>
+          <div class="form-group">
+            <label>Cidade <span class="required">*</span></label>
+            <input type="text" class="form-control" id="lead-cidade">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Serviço <span class="required">*</span></label>
+            <select class="form-control" id="lead-tipo-servico">
+              <option value="Restauração predial">Restauração predial</option>
+              <option value="Pintura externa">Pintura externa</option>
+              <option value="Impermeabilização">Impermeabilização</option>
+              <option value="Tratamento estrutural">Tratamento estrutural</option>
+              <option value="Manutenção geral">Manutenção geral</option>
+              <option value="Informe externo">Informe externo</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Valor Estimado <span class="required">*</span></label>
+            <input type="number" class="form-control" id="lead-valor" step="0.01" min="0" placeholder="0,00">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status <span class="required">*</span></label>
+            <select class="form-control" id="lead-status">
+              <option value="lead">Lead</option>
+              <option value="visita_tecnica">Visita Técnica</option>
+              <option value="orcamento_enviado">Orçamento Enviado</option>
+              <option value="negociacao">Negociação</option>
+              <option value="aprovado">Aprovado</option>
+              <option value="perdido">Perdido</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Próxima Ação <span class="required">*</span></label>
+            <input type="text" class="form-control" id="lead-proxima-acao" placeholder="Ex: Ligar na segunda">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Contato</label>
+            <input type="text" class="form-control" id="lead-nome-contato">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" class="form-control" id="lead-telefone" placeholder="(48) 99999-9999">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" class="form-control" id="lead-email" placeholder="contato@email.com">
+          </div>
+          <div class="form-group">
+            <label>Administradora</label>
+            <input type="text" class="form-control" id="lead-administradora">
+          </div>
+          <div class="form-group">
+            <label>Probabilidade (%)</label>
+            <input type="number" class="form-control" id="lead-probabilidade" min="0" max="100" value="30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea class="form-control" id="lead-observacoes" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-lead')">Cancelar</button>
+        <button class="btn btn-primary" onclick="CRM.save()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Converter em Obra -->
+  <div class="modal-overlay" id="modal-converter">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Converter Lead em Obra</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-converter')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="converter-lead-id">
+        <p style="margin-bottom: 16px; color: var(--cinza);">O lead será marcado como Aprovado e uma obra será criada automaticamente.</p>
+        <div class="form-group">
+          <label>CNPJ do Condomínio</label>
+          <input type="text" class="form-control" id="converter-cnpj" placeholder="00.000.000/0000-00" oninput="mascaraCNPJ(this)">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Valor Fechado (R$)</label>
+            <input type="number" class="form-control" id="converter-valor" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>Data de Início</label>
+            <input type="date" class="form-control" id="converter-data-inicio">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prazo (dias)</label>
+            <input type="number" class="form-control" id="converter-prazo" value="90" min="1">
+          </div>
+          <div class="form-group">
+            <label>Parcelas</label>
+            <input type="number" class="form-control" id="converter-parcelas" value="1" min="1" max="48">
+            <small style="color: var(--cinza); font-size: 11px;">Receitas mensais a partir da data de início</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-converter')">Cancelar</button>
+        <button class="btn btn-success" onclick="CRM.converter()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Converter em Obra
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/supabase-config.js?v=5"></script>
+  <script src="js/db.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/nav.js?v=5"></script>
+  <script src="js/crm.js?v=5"></script>
+  <script>
+    document.getElementById('sidebar').innerHTML = renderSidebar('crm');
+    CRM.init();
+
+    function mascaraCNPJ(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 14);
+      if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+      else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+      else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+      input.value = v;
+    }
+  </script>
+</body>
+</html>

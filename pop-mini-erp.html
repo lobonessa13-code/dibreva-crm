@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POP — DIBREVA Mini ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --laranja: #D46250;
+      --azul: #1D2A3A;
+      --azul-light: #2A3D52;
+      --cinza: #A6B0B3;
+      --cinza-light: #C8CED0;
+      --bg: #FFFFFF;
+      --success: #2D8E5E;
+      --warning: #E5A100;
+      --danger: #C43B3B;
+      --info: #3A7BBF;
+    }
+
+    @page {
+      margin: 2cm 2.5cm;
+      size: A4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Tahoma, sans-serif;
+      color: var(--azul);
+      background: var(--bg);
+      line-height: 1.6;
+      font-size: 14px;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    /* Header do documento */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--laranja);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    .doc-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .doc-header svg { width: 50px; height: auto; }
+
+    .doc-header-brand h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: var(--azul);
+    }
+
+    .doc-header-brand small {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--cinza);
+      text-transform: uppercase;
+    }
+
+    .doc-header-right {
+      text-align: right;
+    }
+
+    .doc-header-right .doc-type {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--laranja);
+      margin-bottom: 4px;
+    }
+
+    .doc-header-right .doc-meta {
+      font-size: 11px;
+      color: var(--cinza);
+    }
+
+    /* Título do documento */
+    .doc-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--azul);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .doc-subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: var(--cinza);
+      margin-bottom: 30px;
+    }
+
+    /* Info box */
+    .info-box {
+      background: #F4F6F7;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      border-left: 4px solid var(--info);
+    }
+
+    .info-box strong {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--azul);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .info-box table {
+      width: 100%;
+      font-size: 13px;
+    }
+
+    .info-box td { padding: 3px 0; }
+    .info-box td:first-child { font-weight: 600; width: 160px; color: var(--azul-light); }
+
+    /* Seções */
+    .section {
+      margin-bottom: 28px;
+      page-break-inside: avoid;
+    }
+
+    .section-number {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--laranja);
+      margin-bottom: 4px;
+    }
+
+    .section h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--azul);
+      border-bottom: 2px solid #EEF1F2;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+
+    .section h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--azul-light);
+      margin: 16px 0 8px;
+    }
+
+    /* Listas de passos */
+    .steps {
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .steps li {
+      counter-increment: step;
+      padding: 10px 16px 10px 50px;
+      position: relative;
+      margin-bottom: 6px;
+      background: #FAFBFC;
+      border-radius: 6px;
+      border: 1px solid #EEF1F2;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 26px;
+      height: 26px;
+      background: var(--laranja);
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .steps li strong { color: var(--azul); }
+    .steps li .hint { font-size: 12px; color: var(--cinza); font-style: italic; margin-top: 2px; }
+
+    /* Tabelas */
+    table.pop-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    table.pop-table th {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    table.pop-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #EEF1F2;
+    }
+
+    table.pop-table tr:nth-child(even) { background: #FAFBFC; }
+
+    /* Badge inline */
+    .pop-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .pop-badge.blue { background: rgba(58,123,191,0.12); color: var(--info); }
+    .pop-badge.dark { background: rgba(29,42,58,0.1); color: var(--azul-light); }
+    .pop-badge.orange { background: rgba(211,126,83,0.15); color: #D37E53; }
+    .pop-badge.yellow { background: rgba(229,161,0,0.12); color: var(--warning); }
+    .pop-badge.green { background: rgba(45,142,94,0.12); color: var(--success); }
+    .pop-badge.red { background: rgba(196,59,59,0.12); color: var(--danger); }
+
+    /* Fluxograma */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .flow-step {
+      background: #F4F6F7;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #E0E4E6;
+    }
+
+    .flow-arrow { color: var(--laranja); font-size: 16px; }
+
+    /* Dica */
+    .tip {
+      background: rgba(45,142,94,0.06);
+      border-left: 4px solid var(--success);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    .tip strong { color: var(--success); }
+
+    .warning-box {
+      background: rgba(229,161,0,0.06);
+      border-left: 4px solid var(--warning);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    .warning-box strong { color: var(--warning); }
+
+    /* Rodapé */
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 2px solid #EEF1F2;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--cinza);
+    }
+
+    /* Print */
+    @media print {
+      body { padding: 0; max-width: none; }
+      .no-print { display: none; }
+      .section { page-break-inside: avoid; }
+    }
+
+    /* Botão imprimir */
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--laranja);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212,98,80,0.3);
+    }
+    .print-btn:hover { background: #C0574A; }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn no-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <div class="doc-header-left">
+      <svg viewBox="0 0 50 60" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="6" width="42" height="48" rx="3" fill="none" stroke="#D46250" stroke-width="2.5"/>
+        <polyline points="16,38 25,28 34,38" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="16,30 25,20 34,30" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="16,22 25,12 34,22" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="doc-header-brand">
+        <h1>DIBREVA</h1>
+        <small>Manutenção & Restauração Predial</small>
+      </div>
+    </div>
+    <div class="doc-header-right">
+      <div class="doc-type">Procedimento Operacional Padrão</div>
+      <div class="doc-meta">
+        Código: POP-ERP-001<br>
+        Versão: 1.0 — Fev/2026<br>
+        Responsável: Vanessa Lobo
+      </div>
+    </div>
+  </div>
+
+  <!-- TÍTULO -->
+  <div class="doc-title">Mini ERP DIBREVA — Manual de Operação</div>
+  <div class="doc-subtitle">Guia completo para uso dos módulos CRM, Obras e Financeiro</div>
+
+  <!-- INFORMAÇÕES GERAIS -->
+  <div class="info-box">
+    <strong>Informações do Sistema</strong>
+    <table>
+      <tr><td>Sistema:</td><td>DIBREVA Mini ERP v1.0</td></tr>
+      <tr><td>Acesso:</td><td>Duplo-clique em <code>start.command</code> ou <code>http://localhost:8080/crm.html</code></td></tr>
+      <tr><td>Módulos:</td><td>CRM (vendas) · Obras (execução) · Financeiro (receitas e despesas)</td></tr>
+      <tr><td>Banco de dados:</td><td>Supabase (nuvem — dados seguros e acessíveis)</td></tr>
+    </table>
+  </div>
+
+  <!-- 1. VISÃO GERAL -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 1</div>
+    <h2>Visão Geral do Sistema</h2>
+    <p>O Mini ERP DIBREVA integra três áreas da empresa em um fluxo contínuo:</p>
+
+    <div class="flow">
+      <div class="flow-step">Novo Lead (CRM)</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Pipeline de vendas</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Converter em Obra</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Obra em execução</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Parcelas no Financeiro</div>
+    </div>
+
+    <p>A sidebar lateral dá acesso a todos os módulos. Em dispositivos móveis, use o botão de menu no canto superior esquerdo.</p>
+  </div>
+
+  <!-- 2. CRM -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 2</div>
+    <h2>Módulo CRM — Pipeline de Vendas</h2>
+
+    <p>O CRM controla todos os leads (potenciais clientes) desde o primeiro contato até a aprovação ou perda.</p>
+
+    <h3>2.1 Pipeline (Kanban)</h3>
+    <p>Os leads são organizados em 6 colunas que representam o estágio da negociação:</p>
+
+    <table class="pop-table">
+      <thead>
+        <tr><th>Estágio</th><th>Significado</th><th>Ação Esperada</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pop-badge blue">LEAD</span></td><td>Contato recém-cadastrado</td><td>Fazer primeiro contato, enviar informativo</td></tr>
+        <tr><td><span class="pop-badge dark">VISITA TÉCNICA</span></td><td>Visita agendada ou realizada</td><td>Realizar visita, levantar escopo</td></tr>
+        <tr><td><span class="pop-badge orange">ORÇAMENTO ENVIADO</span></td><td>Proposta enviada ao cliente</td><td>Acompanhar retorno, tirar dúvidas</td></tr>
+        <tr><td><span class="pop-badge yellow">NEGOCIAÇÃO</span></td><td>Cliente em negociação ativa</td><td>Negociar valores e prazos</td></tr>
+        <tr><td><span class="pop-badge green">APROVADO</span></td><td>Serviço aprovado pelo cliente</td><td>Converter em Obra</td></tr>
+        <tr><td><span class="pop-badge red">PERDIDO</span></td><td>Cliente desistiu ou recusou</td><td>Registrar motivo, arquivar</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 Cadastrar Novo Lead</h3>
+    <ol class="steps">
+      <li>Clique no botão <strong>"Novo Lead"</strong> (canto superior direito)</li>
+      <li>Preencha os campos obrigatórios: <strong>Condomínio</strong>, <strong>Tipo de Serviço</strong> e <strong>Próxima Ação</strong></li>
+      <li>Informe <strong>Cidade</strong>, <strong>Valor Estimado</strong>, <strong>Contato</strong>, <strong>Telefone</strong> e <strong>E-mail</strong></li>
+      <li>Defina a <strong>Probabilidade</strong> de fechamento (0-100%)</li>
+      <li>Clique em <strong>"Salvar"</strong></li>
+    </ol>
+
+    <div class="tip">
+      <strong>Dica:</strong> A probabilidade é usada para calcular a "Previsão de Faturamento" no KPI. Atualize conforme a negociação avança.
+    </div>
+
+    <h3>2.3 Editar / Mover Lead no Pipeline</h3>
+    <ol class="steps">
+      <li>Clique no <strong>card do lead</strong> no pipeline (ou no ícone de edição na tabela)</li>
+      <li>Altere o <strong>Status</strong> para mover entre colunas</li>
+      <li>Atualize a <strong>Próxima Ação</strong> e demais informações</li>
+      <li>Clique em <strong>"Salvar"</strong></li>
+    </ol>
+
+    <h3>2.4 Converter Lead em Obra</h3>
+    <p>Quando um lead é aprovado, ele pode ser convertido em obra:</p>
+    <ol class="steps">
+      <li>Na aba <strong>Tabela</strong>, localize o lead com status <strong>Negociação</strong> ou <strong>Aprovado</strong></li>
+      <li>Clique no botão verde <strong>✓</strong> (Converter em Obra)</li>
+      <li>Preencha: <strong>CNPJ</strong>, <strong>Valor Fechado</strong>, <strong>Data de Início</strong>, <strong>Prazo</strong> e <strong>Parcelas</strong></li>
+      <li>Clique em <strong>"Converter em Obra"</strong></li>
+    </ol>
+
+    <div class="warning-box">
+      <strong>Atenção:</strong> A conversão é automática — o lead muda para "Aprovado", a obra é criada em "Planejamento" e as receitas (parcelas) são geradas automaticamente no Financeiro.
+    </div>
+
+    <h3>2.5 Outras Funções do CRM</h3>
+    <table class="pop-table">
+      <thead>
+        <tr><th>Função</th><th>Como Usar</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Buscar lead</td><td>Digite na barra de busca (aba Tabela)</td></tr>
+        <tr><td>Filtrar por status</td><td>Use o dropdown ao lado da busca</td></tr>
+        <tr><td>Ordenar tabela</td><td>Clique no título da coluna</td></tr>
+        <tr><td>Excluir lead</td><td>Ícone de lixeira na tabela (pede confirmação)</td></tr>
+        <tr><td>Exportar CSV</td><td>Botão "Exportar CSV" no topo</td></tr>
+        <tr><td>Ver gráficos</td><td>Aba "Gráficos" — distribuição por status e valor por cidade</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. OBRAS -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 3</div>
+    <h2>Módulo Obras — Gestão de Execução</h2>
+
+    <p>O módulo Obras acompanha cada projeto desde o planejamento até a conclusão.</p>
+
+    <h3>3.1 Board (Kanban de Obras)</h3>
+    <table class="pop-table">
+      <thead>
+        <tr><th>Coluna</th><th>Significado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pop-badge blue">PLANEJAMENTO</span></td><td>Obra aprovada, aguardando início</td></tr>
+        <tr><td><span class="pop-badge yellow">EM EXECUÇÃO</span></td><td>Obra em andamento (barra de progresso mostra % do prazo)</td></tr>
+        <tr><td><span class="pop-badge green">FINALIZADA</span></td><td>Obra concluída</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tip">
+      <strong>Barra de progresso:</strong> Verde = até 60% do prazo · Laranja = 60-90% · Vermelho = acima de 90% (urgência).
+    </div>
+
+    <h3>3.2 Criar Obra Manualmente</h3>
+    <ol class="steps">
+      <li>Clique em <strong>"Nova Obra"</strong></li>
+      <li>Preencha: <strong>Condomínio</strong>, <strong>Cliente</strong>, <strong>CNPJ</strong>, <strong>Cidade</strong>, <strong>Valor</strong></li>
+      <li>Defina <strong>Data de Início</strong> e <strong>Prazo em dias</strong></li>
+      <li>Clique em <strong>"Salvar"</strong></li>
+    </ol>
+
+    <h3>3.3 Ver Financeiro da Obra</h3>
+    <ol class="steps">
+      <li>Na aba <strong>Tabela</strong>, clique no ícone <strong>$</strong> (cifrão) da obra</li>
+      <li>O modal exibe <strong>receitas previstas</strong> e <strong>despesas vinculadas</strong></li>
+    </ol>
+  </div>
+
+  <!-- 4. FINANCEIRO -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 4</div>
+    <h2>Módulo Financeiro — Receitas e Despesas</h2>
+
+    <h3>4.1 Navegação por Mês</h3>
+    <p>Use as setas <strong>◀ ▶</strong> ao lado do nome do mês para navegar entre os meses. Os KPIs e listas se atualizam automaticamente.</p>
+
+    <h3>4.2 KPIs do Mês</h3>
+    <table class="pop-table">
+      <thead>
+        <tr><th>KPI</th><th>O que mostra</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Faturamento do Mês</td><td>Total de receitas com status "Recebido" no mês selecionado</td></tr>
+        <tr><td>Despesas do Mês</td><td>Total de despesas com status "Pago" no mês selecionado</td></tr>
+        <tr><td>Lucro Bruto</td><td>Faturamento − Despesas (verde = positivo, vermelho = negativo)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>4.3 Adicionar Receita (com Parcelamento)</h3>
+    <ol class="steps">
+      <li>Clique em <strong>"+ Receita"</strong></li>
+      <li>Selecione a <strong>Obra vinculada</strong> (opcional)</li>
+      <li>Preencha <strong>Descrição</strong>, <strong>Valor total</strong> e <strong>Data</strong></li>
+      <li>No campo <strong>Parcelas</strong>, informe o número de parcelas desejado
+        <div class="hint">Ex: Valor R$ 90.000 com 3 parcelas = 3 receitas de R$ 30.000 (mensal)</div>
+      </li>
+      <li>Clique em <strong>"Salvar"</strong></li>
+    </ol>
+
+    <h3>4.4 Adicionar Despesa</h3>
+    <ol class="steps">
+      <li>Clique em <strong>"+ Despesa"</strong></li>
+      <li>Selecione a <strong>Obra vinculada</strong> (opcional)</li>
+      <li>Preencha <strong>Descrição</strong>, <strong>Categoria</strong>, <strong>Valor</strong> e <strong>Data de Vencimento</strong></li>
+      <li>Clique em <strong>"Salvar"</strong></li>
+    </ol>
+
+    <p><strong>Categorias de despesa:</strong> Material · Mão de obra · Equipamento · Transporte · Administrativo · Imposto · Geral</p>
+
+    <h3>4.5 Marcar como Recebido / Pago</h3>
+    <ol class="steps">
+      <li>Na lista de receitas ou despesas, clique no botão verde <strong>✓</strong></li>
+      <li>O item muda de "Previsto/Pendente" para "Recebido/Pago"</li>
+      <li>Os KPIs se atualizam automaticamente</li>
+    </ol>
+
+    <h3>4.6 Gráfico de Fluxo de Caixa</h3>
+    <p>Na parte inferior da página, o gráfico mostra receitas, despesas e saldo dos últimos 6 meses. Use para acompanhar a saúde financeira da empresa.</p>
+  </div>
+
+  <!-- 5. FLUXO COMPLETO -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 5</div>
+    <h2>Fluxo Completo: Lead → Obra → Financeiro</h2>
+
+    <p>Este é o fluxo principal do sistema, do primeiro contato até o recebimento:</p>
+
+    <ol class="steps">
+      <li><strong>CRM:</strong> Cadastrar novo lead com dados do condomínio</li>
+      <li><strong>CRM:</strong> Avançar no pipeline: Lead → Visita → Orçamento → Negociação</li>
+      <li><strong>CRM:</strong> Lead aprovado → clicar <strong>"Converter em Obra"</strong> (informar CNPJ, valor, parcelas)</li>
+      <li><strong>OBRAS:</strong> Obra aparece automaticamente em "Planejamento" → mudar para "Em Execução" quando iniciar</li>
+      <li><strong>FINANCEIRO:</strong> Parcelas de receita criadas automaticamente → marcar como <strong>"Recebido"</strong> conforme pagamento</li>
+      <li><strong>FINANCEIRO:</strong> Cadastrar despesas da obra (materiais, mão de obra, etc.) → marcar como <strong>"Pago"</strong></li>
+      <li><strong>OBRAS:</strong> Ao concluir, mudar status para <strong>"Finalizada"</strong></li>
+    </ol>
+  </div>
+
+  <!-- 6. COMO ABRIR -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 6</div>
+    <h2>Como Abrir o Sistema</h2>
+
+    <h3>6.1 No Mac (método simples)</h3>
+    <ol class="steps">
+      <li>Abra a pasta <strong>Documentos → CRM-DIBREVA</strong></li>
+      <li>Dê <strong>duplo-clique</strong> no arquivo <strong>start.command</strong></li>
+      <li>O navegador abrirá automaticamente com o CRM</li>
+    </ol>
+
+    <h3>6.2 Via Terminal (alternativa)</h3>
+    <ol class="steps">
+      <li>Abra o <strong>Terminal</strong></li>
+      <li>Digite: <code>cd ~/Documents/CRM-DIBREVA && python3 -m http.server 8080</code></li>
+      <li>Abra no navegador: <code>http://localhost:8080/crm.html</code></li>
+    </ol>
+
+    <div class="warning-box">
+      <strong>Importante:</strong> Para fechar o sistema, feche a janela do Terminal ou pressione <strong>Ctrl+C</strong>.
+    </div>
+  </div>
+
+  <!-- 7. DÚVIDAS FREQUENTES -->
+  <div class="section">
+    <div class="section-number">SEÇÃO 7</div>
+    <h2>Dúvidas Frequentes</h2>
+
+    <table class="pop-table">
+      <thead>
+        <tr><th>Pergunta</th><th>Resposta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Os dados são salvos automaticamente?</td><td>Sim, tudo é salvo no banco de dados em nuvem (Supabase) ao clicar "Salvar".</td></tr>
+        <tr><td>Posso acessar de outro computador?</td><td>Sim, basta ter os mesmos arquivos e rodar o servidor local. Os dados são compartilhados.</td></tr>
+        <tr><td>Como exportar dados?</td><td>Use o botão "Exportar CSV" no CRM ou Financeiro. Abre no Excel.</td></tr>
+        <tr><td>Apaguei um lead por engano, o que fazer?</td><td>Os dados usam "soft delete" — ainda existem no banco. Solicite recuperação ao administrador.</td></tr>
+        <tr><td>O sistema não abre, o que fazer?</td><td>Verifique se o Terminal está aberto com o servidor rodando. Se a porta 8080 estiver ocupada, feche e reabra.</td></tr>
+        <tr><td>Onde vejo as parcelas futuras?</td><td>No Financeiro, use as setas ◀ ▶ para navegar até o mês da parcela.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="doc-footer">
+    <span>DIBREVA — Manutenção & Restauração Predial</span>
+    <span>POP-ERP-001 · Versão 1.0 · Fevereiro 2026</span>
+    <span>Vanessa Lobo — CAU/SC A185622-7</span>
+  </div>
+
+</body>
+</html>
