@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia — Como Criar um Mini ERP do Zero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --laranja: #D46250;
+      --azul: #1D2A3A;
+      --azul-light: #2A3D52;
+      --cinza: #A6B0B3;
+      --bg: #FFFFFF;
+      --code-bg: #1E1E2E;
+      --success: #2D8E5E;
+      --warning: #E5A100;
+      --info: #3A7BBF;
+    }
+
+    @page { margin: 2cm; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Calibri, 'Segoe UI', sans-serif;
+      color: var(--azul);
+      background: var(--bg);
+      line-height: 1.7;
+      font-size: 14px;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    /* Header */
+    .doc-header {
+      text-align: center;
+      border-bottom: 3px solid var(--laranja);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+
+    .doc-header h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--azul);
+      margin-bottom: 8px;
+    }
+
+    .doc-header p {
+      font-size: 15px;
+      color: var(--cinza);
+    }
+
+    /* Fase */
+    .fase {
+      margin-bottom: 36px;
+      page-break-inside: avoid;
+    }
+
+    .fase-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .fase-num {
+      width: 48px;
+      height: 48px;
+      background: var(--laranja);
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .fase-header h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .fase-header h2 small {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cinza);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Conteúdo */
+    h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--azul-light);
+      margin: 18px 0 8px;
+    }
+
+    p { margin-bottom: 10px; }
+
+    ul, ol {
+      margin: 8px 0 14px 24px;
+    }
+
+    li { margin-bottom: 6px; }
+    li strong { color: var(--azul); }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      color: #CDD6F4;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 10px 0 16px;
+      line-height: 1.5;
+    }
+
+    pre .comment { color: #6C7086; }
+    pre .keyword { color: #CBA6F7; }
+    pre .string { color: #A6E3A1; }
+    pre .type { color: #89B4FA; }
+    pre .func { color: #F9E2AF; }
+
+    code {
+      background: #F0F2F4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Boxes */
+    .box {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 12px 0 16px;
+      font-size: 13px;
+    }
+
+    .box-tip {
+      background: rgba(45,142,94,0.06);
+      border-left: 4px solid var(--success);
+    }
+    .box-tip strong { color: var(--success); }
+
+    .box-warn {
+      background: rgba(229,161,0,0.06);
+      border-left: 4px solid var(--warning);
+    }
+    .box-warn strong { color: var(--warning); }
+
+    .box-info {
+      background: rgba(58,123,191,0.06);
+      border-left: 4px solid var(--info);
+    }
+    .box-info strong { color: var(--info); }
+
+    /* Tabelas */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 13px;
+    }
+
+    th {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #EEF1F2;
+    }
+
+    tr:nth-child(even) { background: #FAFBFC; }
+
+    /* Diagrama */
+    .diagram {
+      background: #F4F6F7;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 14px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      margin: 10px 0 16px 0;
+    }
+
+    .checklist li {
+      padding: 6px 0 6px 30px;
+      position: relative;
+    }
+
+    .checklist li::before {
+      content: '☐';
+      position: absolute;
+      left: 4px;
+      font-size: 16px;
+      color: var(--laranja);
+    }
+
+    /* Separador */
+    hr {
+      border: none;
+      border-top: 2px solid #EEF1F2;
+      margin: 32px 0;
+    }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 2px solid #EEF1F2;
+      font-size: 11px;
+      color: var(--cinza);
+      text-align: center;
+    }
+
+    /* Print */
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--laranja);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212,98,80,0.3);
+    }
+    .print-btn:hover { background: #C0574A; }
+
+    @media print {
+      body { padding: 0; max-width: none; }
+      .print-btn { display: none; }
+      .fase { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <h1>Como Criar um Mini ERP do Zero</h1>
+    <p>Guia completo passo a passo — Da ideia ao sistema online</p>
+    <p style="font-size: 12px; margin-top: 4px;">Baseado no projeto DIBREVA Mini ERP · Fevereiro 2026</p>
+  </div>
+
+  <!-- VISÃO GERAL -->
+  <div class="box box-info">
+    <strong>O que você vai construir:</strong> Um sistema web completo com banco de dados na nuvem, usando apenas HTML + CSS + JavaScript + Supabase (grátis). Sem frameworks, sem backend, sem servidor dedicado. Publicável gratuitamente no GitHub Pages.
+  </div>
+
+  <h3>Stack Tecnológica</h3>
+  <table>
+    <thead>
+      <tr><th>Camada</th><th>Tecnologia</th><th>Custo</th><th>Por quê</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Frontend</td><td>HTML + CSS + JS puro</td><td>Grátis</td><td>Simples, sem build, roda em qualquer navegador</td></tr>
+      <tr><td>Banco de dados</td><td>Supabase (PostgreSQL)</td><td>Grátis (até 500MB)</td><td>SQL real, API automática, hospedagem inclusa</td></tr>
+      <tr><td>Hospedagem</td><td>GitHub Pages</td><td>Grátis</td><td>Deploy automático, SSL incluso, domínio customizável</td></tr>
+      <tr><td>Gráficos</td><td>Chart.js (CDN)</td><td>Grátis</td><td>Simples de usar, bonito, responsivo</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- FASE 1 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">1</div>
+      <h2>Planejamento <small>Antes de escrever código</small></h2>
+    </div>
+
+    <p>Todo ERP começa com 3 perguntas:</p>
+
+    <h3>1.1 Quais são os módulos?</h3>
+    <p>Liste as áreas do negócio que o sistema precisa cobrir. Exemplos:</p>
+    <table>
+      <thead>
+        <tr><th>Tipo de Negócio</th><th>Módulos Sugeridos</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Construção / Reformas</td><td>CRM · Obras · Financeiro</td></tr>
+        <tr><td>Clínica / Consultório</td><td>Pacientes · Agenda · Financeiro</td></tr>
+        <tr><td>E-commerce / Loja</td><td>Produtos · Pedidos · Estoque · Financeiro</td></tr>
+        <tr><td>Agência / Freelancer</td><td>Clientes · Projetos · Tarefas · Financeiro</td></tr>
+        <tr><td>Escola / Curso</td><td>Alunos · Turmas · Pagamentos</td></tr>
+        <tr><td>Oficina / Assistência</td><td>Clientes · Ordens de Serviço · Peças · Financeiro</td></tr>
+      </tbody>
+    </table>
+
+    <h3>1.2 Quais dados cada módulo guarda?</h3>
+    <p>Para cada módulo, defina as <strong>tabelas</strong> e seus <strong>campos</strong>. Use esta estrutura:</p>
+
+    <pre><span class="comment">// Modelo: definir tabelas para cada módulo</span>
+
+<span class="type">Módulo: CRM</span>
+  <span class="func">Tabela: leads</span>
+    - nome (texto, obrigatório)
+    - email (texto)
+    - telefone (texto)
+    - valor_estimado (número)
+    - status (opções: lead, negociacao, aprovado, perdido)
+    - created_at (data automática)
+
+<span class="type">Módulo: Financeiro</span>
+  <span class="func">Tabela: receitas</span>
+    - descricao (texto, obrigatório)
+    - valor (número, obrigatório)
+    - data (data, obrigatório)
+    - status (opções: previsto, recebido)</pre>
+
+    <h3>1.3 Qual é o fluxo principal?</h3>
+    <p>Defina como os dados fluem entre módulos. Este é o "coração" do ERP:</p>
+
+    <div class="diagram">DIBREVA:   Lead → Pipeline → Aprovado → Obra → Receitas/Despesas
+Clínica:   Paciente → Agendamento → Consulta → Cobrança → Recebimento
+Loja:      Produto → Pedido → Separação → Envio → Pagamento
+Agência:   Cliente → Proposta → Projeto → Tarefas → Faturamento</div>
+
+    <div class="box box-tip">
+      <strong>Regra de ouro:</strong> Comece com 2-3 módulos no máximo. É mais fácil adicionar depois do que remover complexidade.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- FASE 2 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">2</div>
+      <h2>Configurar o Supabase <small>Banco de dados na nuvem (5 minutos)</small></h2>
+    </div>
+
+    <ol>
+      <li>Acesse <strong><a href="https://supabase.com">supabase.com</a></strong> e crie uma conta gratuita</li>
+      <li>Clique em <strong>"New Project"</strong></li>
+      <li>Preencha:
+        <ul>
+          <li><strong>Nome:</strong> nome-do-seu-erp (ex: <code>clinica-erp</code>)</li>
+          <li><strong>Região:</strong> South America (São Paulo) — mais próximo = mais rápido</li>
+          <li><strong>Senha:</strong> guarde esta senha (para acesso direto ao banco)</li>
+        </ul>
+      </li>
+      <li>Aguarde ~2 minutos para o projeto ser criado</li>
+      <li>Vá em <strong>Settings → API</strong> e copie:
+        <ul>
+          <li><strong>Project URL</strong> (ex: <code>https://xxxxx.supabase.co</code>)</li>
+          <li><strong>Publishable key</strong> (ex: <code>sb_publishable_xxxxx</code>)</li>
+        </ul>
+      </li>
+    </ol>
+
+    <div class="box box-warn">
+      <strong>Importante:</strong> A publishable key é segura para usar no frontend. Ela só permite operações permitidas pelas políticas de segurança (RLS) que você configura.
+    </div>
+
+    <h3>2.1 Criar as tabelas (SQL Editor)</h3>
+    <p>No Supabase, vá em <strong>SQL Editor</strong> e execute o SQL das suas tabelas. Modelo base:</p>
+
+    <pre><span class="comment">-- Modelo de tabela com campos padrão</span>
+<span class="keyword">CREATE TABLE</span> <span class="func">nome_da_tabela</span> (
+  id <span class="type">UUID</span> <span class="keyword">DEFAULT</span> gen_random_uuid() <span class="keyword">PRIMARY KEY</span>,
+  user_id <span class="type">UUID</span> <span class="keyword">DEFAULT</span> auth.uid(),
+
+  <span class="comment">-- Seus campos aqui</span>
+  nome <span class="type">TEXT NOT NULL</span>,
+  valor <span class="type">NUMERIC</span>(12,2) <span class="keyword">DEFAULT</span> 0,
+  status <span class="type">TEXT</span> <span class="keyword">DEFAULT</span> <span class="string">'ativo'</span>
+    <span class="keyword">CHECK</span> (status <span class="keyword">IN</span> (<span class="string">'ativo'</span>, <span class="string">'inativo'</span>, <span class="string">'finalizado'</span>)),
+
+  <span class="comment">-- Campos automáticos (sempre incluir)</span>
+  created_at <span class="type">TIMESTAMPTZ</span> <span class="keyword">DEFAULT</span> now(),
+  updated_at <span class="type">TIMESTAMPTZ</span> <span class="keyword">DEFAULT</span> now(),
+  deleted_at <span class="type">TIMESTAMPTZ</span>  <span class="comment">-- soft delete</span>
+);
+
+<span class="comment">-- Trigger para updated_at automático</span>
+<span class="keyword">CREATE TRIGGER</span> nome_da_tabela_updated
+  <span class="keyword">BEFORE UPDATE ON</span> nome_da_tabela
+  <span class="keyword">FOR EACH ROW EXECUTE FUNCTION</span> update_updated_at();
+
+<span class="comment">-- RLS: habilitar segurança + política aberta (uso individual)</span>
+<span class="keyword">ALTER TABLE</span> nome_da_tabela <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
+<span class="keyword">CREATE POLICY</span> <span class="string">"Acesso total"</span> <span class="keyword">ON</span> nome_da_tabela
+  <span class="keyword">FOR ALL USING</span> (<span class="keyword">true</span>) <span class="keyword">WITH CHECK</span> (<span class="keyword">true</span>);</pre>
+
+    <h3>2.2 Recursos úteis do banco</h3>
+    <table>
+      <thead>
+        <tr><th>Recurso</th><th>Quando Usar</th><th>Exemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>CHECK</code></td><td>Limitar valores de um campo</td><td><code>status IN ('ativo','inativo')</code></td></tr>
+        <tr><td><code>REFERENCES</code></td><td>Vincular tabelas (FK)</td><td><code>cliente_id UUID REFERENCES clientes(id)</code></td></tr>
+        <tr><td><code>DEFAULT</code></td><td>Valor automático</td><td><code>created_at DEFAULT now()</code></td></tr>
+        <tr><td><code>VIEW</code></td><td>KPIs calculados no banco</td><td><code>CREATE VIEW vw_kpis AS SELECT ...</code></td></tr>
+        <tr><td><code>FUNCTION</code></td><td>Operações complexas/atômicas</td><td>Converter lead em obra + criar receitas</td></tr>
+        <tr><td>Soft delete</td><td>Nunca perder dados</td><td>Campo <code>deleted_at</code> + filtrar <code>IS NULL</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <!-- FASE 3 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">3</div>
+      <h2>Estrutura de Arquivos <small>Organização do projeto</small></h2>
+    </div>
+
+    <p>Use sempre esta estrutura. Ela escala bem e é fácil de manter:</p>
+
+    <div class="diagram">meu-erp/
+├── index.html              ← Redireciona para o módulo principal
+├── modulo1.html            ← Página do módulo 1
+├── modulo2.html            ← Página do módulo 2
+├── modulo3.html            ← Página do módulo 3
+├── setup.html              ← Configurações e migração
+├── start.command           ← Abrir no Mac (duplo-clique)
+│
+├── css/
+│   ├── tokens.css          ← Cores, fontes, variáveis da marca
+│   ├── layout.css          ← Sidebar, grid, responsivo, mobile
+│   └── components.css      ← Cards, tabelas, modais, botões, badges
+│
+├── js/
+│   ├── supabase-config.js  ← URL + chave do Supabase
+│   ├── db.js               ← CRUD genérico (reutilizável!)
+│   ├── ui.js               ← Modais, toasts, formatadores
+│   ├── nav.js              ← Sidebar + navegação mobile
+│   ├── modulo1.js          ← Lógica do módulo 1
+│   ├── modulo2.js          ← Lógica do módulo 2
+│   └── modulo3.js          ← Lógica do módulo 3
+│
+└── sql/
+    └── schema.sql          ← SQL completo do banco</div>
+
+    <div class="box box-tip">
+      <strong>Arquivos reutilizáveis entre projetos:</strong> <code>db.js</code>, <code>ui.js</code> e a estrutura CSS. Copie-os para novos projetos e só ajuste as cores em <code>tokens.css</code>.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- FASE 4 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">4</div>
+      <h2>Código Base Reutilizável <small>Copie e adapte para qualquer ERP</small></h2>
+    </div>
+
+    <h3>4.1 supabase-config.js</h3>
+    <pre><span class="comment">// Trocar URL e KEY para cada projeto</span>
+<span class="keyword">const</span> SUPABASE_URL = <span class="string">'https://SEU-PROJETO.supabase.co'</span>;
+<span class="keyword">const</span> SUPABASE_KEY = <span class="string">'sb_publishable_SUA_CHAVE'</span>;
+<span class="keyword">const</span> sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);</pre>
+
+    <h3>4.2 db.js — CRUD Genérico (funciona com qualquer tabela)</h3>
+    <pre><span class="keyword">const</span> DB = {
+  <span class="comment">// Listar (com soft delete)</span>
+  <span class="keyword">async</span> <span class="func">list</span>(table, options = {}) {
+    <span class="keyword">let</span> query = sb.from(table).select(<span class="string">'*'</span>)
+      .is(<span class="string">'deleted_at'</span>, <span class="keyword">null</span>)
+      .order(options.orderBy || <span class="string">'created_at'</span>, { ascending: <span class="keyword">false</span> });
+    <span class="comment">// + filtros, busca...</span>
+    <span class="keyword">return</span> (await query).data || [];
+  },
+
+  <span class="comment">// Buscar por ID</span>
+  <span class="keyword">async</span> <span class="func">get</span>(table, id) {
+    <span class="keyword">return</span> (await sb.from(table).select(<span class="string">'*'</span>).eq(<span class="string">'id'</span>, id).single()).data;
+  },
+
+  <span class="comment">// Criar</span>
+  <span class="keyword">async</span> <span class="func">create</span>(table, record) {
+    <span class="keyword">return</span> (await sb.from(table).insert(record).select().single()).data;
+  },
+
+  <span class="comment">// Atualizar</span>
+  <span class="keyword">async</span> <span class="func">update</span>(table, id, updates) {
+    <span class="keyword">return</span> (await sb.from(table).update(updates).eq(<span class="string">'id'</span>, id).select().single()).data;
+  },
+
+  <span class="comment">// Soft delete</span>
+  <span class="keyword">async</span> <span class="func">remove</span>(table, id) {
+    <span class="keyword">await</span> sb.from(table).update({ deleted_at: <span class="keyword">new</span> Date().toISOString() }).eq(<span class="string">'id'</span>, id);
+  },
+
+  <span class="comment">// Chamar função PostgreSQL</span>
+  <span class="keyword">async</span> <span class="func">rpc</span>(fnName, params) {
+    <span class="keyword">return</span> (await sb.rpc(fnName, params)).data;
+  }
+};</pre>
+
+    <h3>4.3 Estrutura de uma página HTML (modelo)</h3>
+    <pre><span class="type">&lt;!DOCTYPE html&gt;</span>
+<span class="type">&lt;html</span> lang=<span class="string">"pt-BR"</span><span class="type">&gt;</span>
+<span class="type">&lt;head&gt;</span>
+  <span class="type">&lt;meta</span> charset=<span class="string">"UTF-8"</span><span class="type">&gt;</span>
+  <span class="type">&lt;title&gt;</span>Meu ERP - Módulo<span class="type">&lt;/title&gt;</span>
+  <span class="type">&lt;link</span> rel=<span class="string">"stylesheet"</span> href=<span class="string">"css/tokens.css"</span><span class="type">&gt;</span>
+  <span class="type">&lt;link</span> rel=<span class="string">"stylesheet"</span> href=<span class="string">"css/layout.css"</span><span class="type">&gt;</span>
+  <span class="type">&lt;link</span> rel=<span class="string">"stylesheet"</span> href=<span class="string">"css/components.css"</span><span class="type">&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+<span class="type">&lt;/head&gt;</span>
+<span class="type">&lt;body&gt;</span>
+
+  <span class="comment">&lt;!-- Sidebar --&gt;</span>
+  <span class="type">&lt;aside</span> class=<span class="string">"sidebar"</span> id=<span class="string">"sidebar"</span><span class="type">&gt;&lt;/aside&gt;</span>
+
+  <span class="comment">&lt;!-- Conteúdo principal --&gt;</span>
+  <span class="type">&lt;main</span> class=<span class="string">"main-content"</span><span class="type">&gt;</span>
+    <span class="comment">&lt;!-- KPIs --&gt;</span>
+    <span class="type">&lt;div</span> class=<span class="string">"kpi-grid"</span><span class="type">&gt;</span>...<span class="type">&lt;/div&gt;</span>
+    <span class="comment">&lt;!-- Pipeline / Tabela / etc --&gt;</span>
+  <span class="type">&lt;/main&gt;</span>
+
+  <span class="comment">&lt;!-- Modais --&gt;</span>
+  <span class="type">&lt;div</span> class=<span class="string">"modal-overlay"</span> id=<span class="string">"modal-form"</span><span class="type">&gt;</span>...<span class="type">&lt;/div&gt;</span>
+
+  <span class="comment">&lt;!-- Scripts (ordem importa!) --&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"js/supabase-config.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"js/db.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"js/ui.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"js/nav.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+  <span class="type">&lt;script</span> src=<span class="string">"js/modulo.js"</span><span class="type">&gt;&lt;/script&gt;</span>
+<span class="type">&lt;/body&gt;</span>
+<span class="type">&lt;/html&gt;</span></pre>
+
+    <h3>4.4 Estrutura de um módulo JS (modelo)</h3>
+    <pre><span class="keyword">const</span> MEU_MODULO = {
+  dados: [],
+  page: 1,
+
+  <span class="keyword">async</span> <span class="func">init</span>() {
+    <span class="keyword">await</span> <span class="keyword">this</span>.loadData();
+    <span class="keyword">this</span>.renderKPIs();
+    <span class="keyword">this</span>.renderLista();
+  },
+
+  <span class="keyword">async</span> <span class="func">loadData</span>() {
+    <span class="keyword">this</span>.dados = <span class="keyword">await</span> DB.list(<span class="string">'minha_tabela'</span>);
+  },
+
+  <span class="func">renderKPIs</span>() {
+    <span class="comment">// Calcular e exibir KPIs</span>
+    document.getElementById(<span class="string">'kpi-total'</span>).textContent = <span class="keyword">this</span>.dados.length;
+  },
+
+  <span class="func">renderLista</span>() {
+    <span class="comment">// Renderizar tabela ou cards</span>
+  },
+
+  <span class="func">openNew</span>() {
+    <span class="comment">// Limpar e abrir modal</span>
+    UI.openModal(<span class="string">'modal-form'</span>);
+  },
+
+  <span class="keyword">async</span> <span class="func">save</span>() {
+    <span class="keyword">const</span> record = { <span class="comment">/* ler campos do formulário */</span> };
+    <span class="keyword">await</span> DB.create(<span class="string">'minha_tabela'</span>, record);
+    UI.success(<span class="string">'Salvo!'</span>);
+    UI.closeModal(<span class="string">'modal-form'</span>);
+    <span class="keyword">await</span> <span class="keyword">this</span>.loadData();
+    <span class="keyword">this</span>.renderLista();
+  },
+
+  <span class="keyword">async</span> <span class="func">remove</span>(id) {
+    <span class="keyword">if</span> (!<span class="keyword">await</span> UI.confirm(<span class="string">'Excluir?'</span>)) <span class="keyword">return</span>;
+    <span class="keyword">await</span> DB.remove(<span class="string">'minha_tabela'</span>, id);
+    UI.success(<span class="string">'Excluído'</span>);
+    <span class="keyword">await</span> <span class="keyword">this</span>.loadData();
+    <span class="keyword">this</span>.renderLista();
+  }
+};</pre>
+  </div>
+
+  <hr>
+
+  <!-- FASE 5 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">5</div>
+      <h2>Identidade Visual <small>Personalizar para cada cliente</small></h2>
+    </div>
+
+    <p>Toda a identidade visual fica em <code>tokens.css</code>. Para criar um novo ERP com outra marca, basta trocar estas variáveis:</p>
+
+    <pre><span class="comment">/* tokens.css — trocar apenas estas variáveis */</span>
+:root {
+  <span class="comment">/* Cores da marca */</span>
+  --primary: <span class="string">#D46250</span>;       <span class="comment">/* Cor principal (botões, destaques) */</span>
+  --primary-hover: <span class="string">#C0574A</span>; <span class="comment">/* Hover da cor principal */</span>
+  --secondary: <span class="string">#1D2A3A</span>;     <span class="comment">/* Cor base (sidebar, textos) */</span>
+
+  <span class="comment">/* Fontes */</span>
+  --font-heading: <span class="string">'Montserrat'</span>, sans-serif;
+  --font-body: <span class="string">Calibri</span>, sans-serif;
+}</pre>
+
+    <h3>5.1 Encontrar cores para cada cliente</h3>
+    <table>
+      <thead>
+        <tr><th>Se o cliente tem...</th><th>Faça isso</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Logo com cores definidas</td><td>Use um color picker no logo para extrair os hexadecimais</td></tr>
+        <tr><td>Site próprio</td><td>Inspecione o CSS do site para encontrar as cores</td></tr>
+        <tr><td>Nenhuma identidade</td><td>Use azul escuro (#1D2A3A) + uma cor de destaque quente</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <!-- FASE 6 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">6</div>
+      <h2>Componentes Prontos <small>O que o CSS já te dá</small></h2>
+    </div>
+
+    <p>O <code>layout.css</code> e <code>components.css</code> do DIBREVA já incluem tudo que um ERP precisa:</p>
+
+    <table>
+      <thead>
+        <tr><th>Componente</th><th>Classe CSS</th><th>Uso</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>KPI Cards</td><td><code>.kpi-grid</code> + <code>.kpi-card</code></td><td>Indicadores no topo da página</td></tr>
+        <tr><td>Pipeline Kanban</td><td><code>.pipeline</code> + <code>.pipeline-stage</code></td><td>Colunas de status (6 colunas)</td></tr>
+        <tr><td>Board 3 colunas</td><td><code>.pipeline.pipeline-3col</code></td><td>Board mais simples (3 colunas)</td></tr>
+        <tr><td>Tabela com busca</td><td><code>.table-card</code> + <code>.table-toolbar</code></td><td>Listagem com filtro e paginação</td></tr>
+        <tr><td>Modal / Formulário</td><td><code>.modal-overlay</code> + <code>.modal</code></td><td>Criar/editar registros</td></tr>
+        <tr><td>Painéis lado a lado</td><td><code>.two-panels</code></td><td>Ex: Receitas + Despesas</td></tr>
+        <tr><td>Gráficos</td><td><code>.chart-card</code></td><td>Container para Chart.js</td></tr>
+        <tr><td>Toasts</td><td><code>UI.success()</code> / <code>UI.error()</code></td><td>Notificações de sucesso/erro</td></tr>
+        <tr><td>Badges de status</td><td><code>.badge.badge-{status}</code></td><td>Etiquetas coloridas</td></tr>
+        <tr><td>Tabs</td><td><code>.tabs</code> + <code>.tab-btn</code></td><td>Alternar entre visualizações</td></tr>
+        <tr><td>Sidebar responsiva</td><td><code>.sidebar</code> + <code>.mobile-toggle</code></td><td>Navegação que funciona no celular</td></tr>
+        <tr><td>Barra de progresso</td><td><code>.progress-bar</code></td><td>Indicar % de conclusão</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <!-- FASE 7 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">7</div>
+      <h2>Publicar Online <small>Do código ao link público (5 minutos)</small></h2>
+    </div>
+
+    <h3>7.1 Preparar</h3>
+    <ol>
+      <li>Instale o <a href="https://cli.github.com">GitHub CLI</a> se ainda não tiver: <code>brew install gh</code></li>
+      <li>Faça login: <code>gh auth login</code></li>
+    </ol>
+
+    <h3>7.2 Publicar</h3>
+    <p>Dentro da pasta do projeto, execute no Terminal:</p>
+
+    <pre><span class="comment"># 1. Inicializar Git</span>
+git init
+git checkout -b main
+
+<span class="comment"># 2. Adicionar arquivos</span>
+git add .
+
+<span class="comment"># 3. Primeiro commit</span>
+git commit -m <span class="string">"feat: Meu ERP v1.0"</span>
+
+<span class="comment"># 4. Criar repositório no GitHub e publicar</span>
+gh repo create nome-do-erp --public --source=. --push
+
+<span class="comment"># 5. Ativar GitHub Pages</span>
+gh api repos/SEU-USUARIO/nome-do-erp/pages -X POST \
+  --input - &lt;&lt;<span class="string">'EOF'</span>
+{"build_type":"legacy","source":{"branch":"main","path":"/"}}
+<span class="string">EOF</span></pre>
+
+    <h3>7.3 Acessar</h3>
+    <p>Em 1-2 minutos seu sistema estará em:</p>
+    <pre><span class="string">https://SEU-USUARIO.github.io/nome-do-erp/</span></pre>
+
+    <h3>7.4 Atualizar depois</h3>
+    <pre><span class="comment"># Após fazer mudanças:</span>
+git add .
+git commit -m <span class="string">"fix: descrição da mudança"</span>
+git push</pre>
+
+    <div class="box box-info">
+      <strong>Domínio personalizado (opcional):</strong> Você pode apontar um domínio próprio (ex: <code>erp.suaempresa.com.br</code>) para o GitHub Pages. Vá em Settings → Pages → Custom domain.
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- FASE 8 -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">8</div>
+      <h2>Checklist de Novo Projeto <small>Use esta lista para cada ERP novo</small></h2>
+    </div>
+
+    <ul class="checklist">
+      <li><strong>Planejamento:</strong> Definir módulos, tabelas e fluxo principal</li>
+      <li><strong>Supabase:</strong> Criar projeto e anotar URL + key</li>
+      <li><strong>SQL:</strong> Criar tabelas, triggers, views e RLS</li>
+      <li><strong>Copiar base:</strong> Copiar pasta do DIBREVA e renomear</li>
+      <li><strong>tokens.css:</strong> Trocar cores e fontes da marca</li>
+      <li><strong>nav.js:</strong> Atualizar sidebar (logo, módulos, links)</li>
+      <li><strong>supabase-config.js:</strong> Colocar URL e key do novo projeto</li>
+      <li><strong>HTML:</strong> Criar uma página por módulo com KPIs, tabela/pipeline e modais</li>
+      <li><strong>JS:</strong> Criar um arquivo JS por módulo (seguir modelo da Fase 4.4)</li>
+      <li><strong>Testar:</strong> CRUD completo em cada módulo + fluxo entre módulos</li>
+      <li><strong>Setup:</strong> Criar página de configurações e migração (se tiver dados antigos)</li>
+      <li><strong>Publicar:</strong> GitHub Pages (gratuito)</li>
+      <li><strong>POP:</strong> Gerar documentação para o cliente/equipe</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- EXEMPLOS -->
+  <div class="fase">
+    <div class="fase-header">
+      <div class="fase-num">+</div>
+      <h2>Exemplos de Mini ERPs <small>Ideias para novos projetos</small></h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>ERP</th><th>Tabelas</th><th>Pipeline/Status</th><th>Fluxo Principal</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Clínica Veterinária</strong></td>
+          <td>tutores · pets · consultas · financeiro</td>
+          <td>agendada → em_atendimento → finalizada</td>
+          <td>Tutor → Pet → Agendar → Atender → Cobrar</td>
+        </tr>
+        <tr>
+          <td><strong>Escritório de Advocacia</strong></td>
+          <td>clientes · processos · tarefas · financeiro</td>
+          <td>inicial → andamento → audiencia → encerrado</td>
+          <td>Cliente → Processo → Tarefas → Honorários</td>
+        </tr>
+        <tr>
+          <td><strong>Loja / E-commerce</strong></td>
+          <td>produtos · pedidos · estoque · financeiro</td>
+          <td>pendente → separando → enviado → entregue</td>
+          <td>Produto → Pedido → Enviar → Receber pagamento</td>
+        </tr>
+        <tr>
+          <td><strong>Agência de Marketing</strong></td>
+          <td>clientes · projetos · entregas · financeiro</td>
+          <td>briefing → producao → revisao → aprovado</td>
+          <td>Cliente → Briefing → Produzir → Entregar → Faturar</td>
+        </tr>
+        <tr>
+          <td><strong>Imobiliária</strong></td>
+          <td>imoveis · leads · visitas · contratos</td>
+          <td>disponivel → reservado → vendido</td>
+          <td>Imóvel → Lead → Visita → Proposta → Contrato</td>
+        </tr>
+        <tr>
+          <td><strong>Escola / Cursos</strong></td>
+          <td>alunos · turmas · matriculas · financeiro</td>
+          <td>inscrito → ativo → concluido → evadido</td>
+          <td>Aluno → Matrícula → Turma → Pagamentos</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <p>Guia criado por Vanessa Lobo — DIBREVA · Fevereiro 2026</p>
+    <p>Stack: HTML + CSS + JS + Supabase + GitHub Pages — 100% gratuito</p>
+  </div>
+
+</body>
+</html>
