@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia — Corrigir Erro "email" no CRM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --laranja: #D46250;
+      --azul: #1D2A3A;
+      --azul-light: #2A3D52;
+      --cinza: #A6B0B3;
+      --success: #2D8E5E;
+      --warning: #E5A100;
+      --info: #3A7BBF;
+      --danger: #C43B3B;
+    }
+    @page { margin: 2cm; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Calibri, 'Segoe UI', sans-serif;
+      color: var(--azul);
+      background: #fff;
+      line-height: 1.7;
+      font-size: 14px;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .doc-header {
+      text-align: center;
+      border-bottom: 3px solid var(--laranja);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .doc-header h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .doc-header p { color: var(--cinza); }
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 32px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #EEF1F2;
+    }
+    h2 .num {
+      display: inline-block;
+      background: var(--laranja);
+      color: #fff;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      text-align: center;
+      line-height: 30px;
+      font-size: 15px;
+      margin-right: 10px;
+    }
+
+    h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--azul-light);
+      margin: 18px 0 8px;
+    }
+
+    p { margin-bottom: 10px; }
+    ul, ol { margin: 8px 0 14px 24px; }
+    li { margin-bottom: 6px; }
+
+    code {
+      background: #F0F2F4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    pre {
+      background: #1E1E2E;
+      color: #CDD6F4;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 10px 0 16px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    pre .comment { color: #6C7086; }
+    pre .cmd { color: #A6E3A1; }
+    pre .flag { color: #CBA6F7; }
+    pre .str { color: #F9E2AF; }
+
+    .box {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 12px 0 16px;
+      font-size: 13px;
+    }
+    .box-analogy {
+      background: rgba(58,123,191,0.06);
+      border-left: 4px solid var(--info);
+    }
+    .box-analogy strong { color: var(--info); }
+    .box-tip {
+      background: rgba(45,142,94,0.06);
+      border-left: 4px solid var(--success);
+    }
+    .box-tip strong { color: var(--success); }
+    .box-warn {
+      background: rgba(229,161,0,0.06);
+      border-left: 4px solid var(--warning);
+    }
+    .box-warn strong { color: var(--warning); }
+    .box-danger {
+      background: rgba(196,59,59,0.06);
+      border-left: 4px solid var(--danger);
+    }
+    .box-danger strong { color: var(--danger); }
+
+    .steps {
+      list-style: none;
+      counter-reset: step;
+      margin-left: 0;
+    }
+    .steps li {
+      counter-increment: step;
+      padding: 12px 16px 12px 54px;
+      position: relative;
+      margin-bottom: 8px;
+      background: #FAFBFC;
+      border-radius: 8px;
+      border: 1px solid #EEF1F2;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px; top: 12px;
+      width: 28px; height: 28px;
+      background: var(--laranja);
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 13px;
+    }
+    th {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    td { padding: 8px 14px; border-bottom: 1px solid #EEF1F2; }
+    tr:nth-child(even) { background: #FAFBFC; }
+
+    .screenshot-placeholder {
+      background: #F4F6F7;
+      border: 2px dashed #D0D5D8;
+      border-radius: 10px;
+      padding: 24px;
+      margin: 14px 0;
+      text-align: center;
+    }
+    .screenshot-placeholder .mock {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #E0E4E7;
+      padding: 16px;
+      margin: 12px auto;
+      max-width: 600px;
+      text-align: left;
+    }
+    .screenshot-placeholder .mock-bar {
+      background: var(--azul);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px 6px 0 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      margin: -16px -16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .screenshot-placeholder .mock-bar .dots {
+      display: flex;
+      gap: 4px;
+    }
+    .screenshot-placeholder .mock-bar .dots span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .screenshot-placeholder .mock-bar .dots span:nth-child(1) { background: #C43B3B; }
+    .screenshot-placeholder .mock-bar .dots span:nth-child(2) { background: #E5A100; }
+    .screenshot-placeholder .mock-bar .dots span:nth-child(3) { background: #2D8E5E; }
+
+    .mock-sidebar {
+      display: flex;
+      gap: 12px;
+      min-height: 200px;
+    }
+    .mock-sidebar .sidebar-nav {
+      width: 180px;
+      background: var(--azul);
+      border-radius: 6px;
+      padding: 12px;
+      flex-shrink: 0;
+    }
+    .mock-sidebar .sidebar-nav .nav-item {
+      padding: 6px 10px;
+      color: var(--cinza);
+      font-size: 11px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .mock-sidebar .sidebar-nav .nav-item.active {
+      background: rgba(212,98,80,0.2);
+      color: var(--laranja);
+      font-weight: 700;
+    }
+    .mock-sidebar .main-area {
+      flex: 1;
+      padding: 8px;
+    }
+
+    .mock-editor {
+      background: #1E1E2E;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #CDD6F4;
+      line-height: 1.8;
+      margin: 8px 0;
+    }
+    .mock-editor .line-num {
+      color: #6C7086;
+      margin-right: 12px;
+      user-select: none;
+    }
+
+    .mock-btn {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      border: none;
+      cursor: default;
+    }
+    .mock-btn-green { background: var(--success); }
+    .mock-btn-blue { background: var(--info); }
+
+    .arrow-down {
+      text-align: center;
+      font-size: 28px;
+      color: var(--laranja);
+      margin: 8px 0;
+    }
+
+    .copy-box {
+      background: #1E1E2E;
+      color: #A6E3A1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      padding: 20px 24px;
+      border-radius: 8px;
+      margin: 12px 0 16px;
+      text-align: center;
+      letter-spacing: 0.5px;
+      border: 2px solid var(--success);
+      position: relative;
+      cursor: pointer;
+    }
+    .copy-box::after {
+      content: 'clique para copiar';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: var(--cinza);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .copy-box.copied::after {
+      content: 'copiado!';
+      color: var(--success);
+    }
+
+    .error-banner {
+      background: var(--danger);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      margin: 12px 0;
+    }
+
+    .success-banner {
+      background: var(--success);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin: 12px 0;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 2px solid #EEF1F2;
+      font-size: 11px;
+      color: var(--cinza);
+      text-align: center;
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--laranja);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212,98,80,0.3);
+    }
+    .print-btn:hover { background: #C0574A; }
+    @media print {
+      body { padding: 0; max-width: none; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+
+  <div class="doc-header">
+    <h1>Corrigir Erro "email" no CRM</h1>
+    <p>Passo a passo para adicionar a coluna que falta no banco de dados</p>
+    <p style="font-size: 12px; margin-top: 4px;">Guia visual para iniciantes &middot; Fevereiro 2026</p>
+  </div>
+
+  <!-- O PROBLEMA -->
+  <h2><span class="num">1</span> Qual é o problema?</h2>
+
+  <p>Quando você tenta salvar um novo lead no CRM, aparece este erro vermelho:</p>
+
+  <div class="error-banner">
+    Erro ao salvar: Could not find the 'email' column of 'leads' in the schema cache
+  </div>
+
+  <div class="box box-analogy">
+    <strong>O que isso significa?</strong> O formulário do CRM tenta salvar o campo "E-mail" no banco de dados (Supabase), mas a tabela <code>leads</code> foi criada <strong>sem a coluna de email</strong>. É como tentar guardar uma informação numa gaveta que não existe.
+  </div>
+
+  <h3>Traduzindo:</h3>
+  <table>
+    <thead>
+      <tr><th>Trecho do erro</th><th>Significado</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Could not find</code></td><td>Não encontrou</td></tr>
+      <tr><td><code>the 'email' column</code></td><td>a coluna "email"</td></tr>
+      <tr><td><code>of 'leads'</code></td><td>na tabela de leads</td></tr>
+      <tr><td><code>in the schema cache</code></td><td>no esquema do banco de dados</td></tr>
+    </tbody>
+  </table>
+
+  <!-- A SOLUÇÃO -->
+  <h2><span class="num">2</span> Como resolver (resumo)</h2>
+
+  <p>Precisamos adicionar a coluna <code>email</code> na tabela <code>leads</code> do Supabase. Para isso, vamos abrir o <strong>SQL Editor</strong> do Supabase e executar <strong>um único comando</strong>:</p>
+
+  <div class="copy-box" onclick="navigator.clipboard.writeText('ALTER TABLE leads ADD COLUMN email TEXT;').then(() => { this.classList.add('copied'); setTimeout(() => this.classList.remove('copied'), 2000); })">
+    ALTER TABLE leads ADD COLUMN email TEXT;
+  </div>
+
+  <p>Abaixo, o passo a passo com telas simuladas.</p>
+
+  <!-- PASSO 1 -->
+  <h2><span class="num">3</span> Passo a Passo Detalhado</h2>
+
+  <h3>Passo 1 — Abrir o painel do Supabase</h3>
+
+  <ol class="steps">
+    <li>
+      No navegador, acesse: <strong>supabase.com/dashboard</strong>
+      <p style="margin-top: 6px;">Se pedir login, entre com a conta que você usou para criar o projeto.</p>
+    </li>
+  </ol>
+
+  <div class="screenshot-placeholder">
+    <div class="mock">
+      <div class="mock-bar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        supabase.com/dashboard/projects
+      </div>
+      <p style="font-size: 12px; color: var(--cinza); margin-bottom: 8px;">Your projects</p>
+      <div style="background: #F4F6F7; border-radius: 8px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 2px solid var(--laranja);">
+        <div style="width: 36px; height: 36px; background: var(--azul); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">D</div>
+        <div>
+          <div style="font-weight: 700; font-size: 13px;">dibreva-crm</div>
+          <div style="font-size: 11px; color: var(--cinza);">xokskfdzsdxzieboqozq &middot; South America (East)</div>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: var(--laranja); margin-top: 8px; font-weight: 600; text-align: center;">&#8593; Clique no seu projeto</p>
+    </div>
+  </div>
+
+  <!-- PASSO 2 -->
+  <h3>Passo 2 — Clicar em "SQL Editor" no menu lateral</h3>
+
+  <ol class="steps" style="counter-reset: step 1;">
+    <li>
+      Depois de entrar no projeto, olhe o <strong>menu lateral esquerdo</strong> (coluna escura). Procure e clique em <strong>"SQL Editor"</strong>.
+    </li>
+  </ol>
+
+  <div class="screenshot-placeholder">
+    <div class="mock">
+      <div class="mock-bar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        supabase.com/dashboard/project/xokskfdzsdxzieboqozq
+      </div>
+      <div class="mock-sidebar">
+        <div class="sidebar-nav">
+          <div class="nav-item">Table Editor</div>
+          <div class="nav-item active" style="font-size: 12px;">&#9654; SQL Editor</div>
+          <div class="nav-item">Database</div>
+          <div class="nav-item">Authentication</div>
+          <div class="nav-item">Storage</div>
+          <div class="nav-item">Edge Functions</div>
+          <div class="nav-item">API Docs</div>
+          <div class="nav-item">Settings</div>
+        </div>
+        <div class="main-area">
+          <p style="font-size: 11px; color: var(--cinza); margin-bottom: 6px;">Menu lateral do Supabase</p>
+          <p style="font-size: 12px;">Procure <strong>"SQL Editor"</strong> no menu da esquerda. Normalmente fica logo abaixo de "Table Editor".</p>
+          <p style="font-size: 12px;">Pode ter um icone de <code>&lt;/&gt;</code> ou de documento ao lado.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 3 -->
+  <h3>Passo 3 — Colar o comando SQL</h3>
+
+  <ol class="steps" style="counter-reset: step 2;">
+    <li>
+      Vai abrir uma tela com uma <strong>area grande em branco</strong> (como um editor de texto). Apague qualquer coisa que estiver escrita e <strong>cole o comando abaixo</strong>:
+    </li>
+  </ol>
+
+  <div class="copy-box" onclick="navigator.clipboard.writeText('ALTER TABLE leads ADD COLUMN email TEXT;').then(() => { this.classList.add('copied'); setTimeout(() => this.classList.remove('copied'), 2000); })">
+    ALTER TABLE leads ADD COLUMN email TEXT;
+  </div>
+
+  <div class="box box-tip">
+    <strong>Como copiar:</strong> Clique na caixa verde acima &mdash; o comando sera copiado automaticamente. Depois, clique na area branca do SQL Editor e pressione <strong>Cmd + V</strong> para colar.
+  </div>
+
+  <div class="screenshot-placeholder">
+    <div class="mock">
+      <div class="mock-bar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        SQL Editor
+      </div>
+      <div class="mock-editor">
+        <span class="line-num">1</span> <span style="color: #CBA6F7;">ALTER TABLE</span> <span style="color: #F9E2AF;">leads</span> <span style="color: #CBA6F7;">ADD COLUMN</span> <span style="color: #F9E2AF;">email</span> <span style="color: #89B4FA;">TEXT</span>;
+      </div>
+      <div style="text-align: right; padding: 4px 0;">
+        <span class="mock-btn mock-btn-green">&#9654; Run</span>
+      </div>
+      <p style="font-size: 11px; color: var(--laranja); margin-top: 4px; font-weight: 600; text-align: center;">&#8593; Deve ficar assim</p>
+    </div>
+  </div>
+
+  <!-- PASSO 4 -->
+  <h3>Passo 4 — Clicar no botao "Run"</h3>
+
+  <ol class="steps" style="counter-reset: step 3;">
+    <li>
+      Clique no <strong>botao verde "Run"</strong> (pode estar no canto inferior direito ou superior direito).
+      <p style="margin-top: 6px;">Atalho de teclado: <strong>Cmd + Enter</strong> (Mac) ou <strong>Ctrl + Enter</strong> (Windows)</p>
+    </li>
+  </ol>
+
+  <div class="arrow-down">&#8595;</div>
+
+  <div class="screenshot-placeholder">
+    <div class="mock">
+      <div class="mock-bar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        SQL Editor &mdash; Resultado
+      </div>
+      <div class="mock-editor">
+        <span class="line-num">1</span> <span style="color: #CBA6F7;">ALTER TABLE</span> <span style="color: #F9E2AF;">leads</span> <span style="color: #CBA6F7;">ADD COLUMN</span> <span style="color: #F9E2AF;">email</span> <span style="color: #89B4FA;">TEXT</span>;
+      </div>
+      <div class="success-banner">
+        &#10004; Success. No rows returned.
+      </div>
+      <p style="font-size: 11px; color: var(--success); margin-top: 4px; font-weight: 600; text-align: center;">&#8593; Se aparecer isso, funcionou!</p>
+    </div>
+  </div>
+
+  <div class="box box-tip">
+    <strong>"No rows returned" e normal!</strong> Isso nao e um erro. Significa que o comando foi executado com sucesso. Comandos que alteram a estrutura do banco nao retornam linhas.
+  </div>
+
+  <!-- PASSO 5 -->
+  <h3>Passo 5 — Testar no CRM</h3>
+
+  <ol class="steps" style="counter-reset: step 4;">
+    <li>
+      Volte para o CRM no navegador: <strong>lobonessa13-code.github.io/dibreva-crm/crm.html</strong>
+    </li>
+    <li>
+      Pressione <strong>Cmd + Shift + R</strong> (Mac) para recarregar a pagina sem cache.
+    </li>
+    <li>
+      Clique em <strong>"Novo Lead"</strong>, preencha os campos e clique em <strong>"Salvar"</strong>.
+    </li>
+    <li>
+      Se o lead for salvo sem erro, esta tudo certo!
+    </li>
+  </ol>
+
+  <div class="success-banner" style="font-size: 15px; padding: 16px;">
+    &#10004; Lead salvo com sucesso!
+  </div>
+
+  <!-- SE DER ERRO -->
+  <h2><span class="num">4</span> E se der outro erro?</h2>
+
+  <table>
+    <thead>
+      <tr><th>Erro</th><th>Causa</th><th>Solucao</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>column "email" of relation "leads" already exists</code></td>
+        <td>A coluna ja foi adicionada antes</td>
+        <td>Nao precisa fazer nada &mdash; ja esta corrigido! Basta testar o CRM.</td>
+      </tr>
+      <tr>
+        <td><code>permission denied</code></td>
+        <td>Sem permissao no banco</td>
+        <td>Verifique se esta logada na conta correta do Supabase.</td>
+      </tr>
+      <tr>
+        <td><code>relation "leads" does not exist</code></td>
+        <td>Tabela leads nao existe</td>
+        <td>Rode o schema completo (<code>schema.sql</code>) no SQL Editor primeiro.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box box-warn">
+    <strong>Duvida?</strong> Copie a mensagem de erro e mande para o Claude Code no Terminal. Ele vai te ajudar a resolver.
+  </div>
+
+  <!-- VERIFICAR -->
+  <h2><span class="num">5</span> Como verificar se funcionou (opcional)</h2>
+
+  <p>Se quiser confirmar que a coluna foi criada, cole este comando no SQL Editor e clique "Run":</p>
+
+  <pre><span class="cmd">SELECT</span> column_name, data_type
+<span class="cmd">FROM</span> information_schema.columns
+<span class="cmd">WHERE</span> table_name = <span class="str">'leads'</span>
+<span class="cmd">ORDER BY</span> ordinal_position;</pre>
+
+  <p>Deve aparecer uma tabela com todas as colunas, incluindo <code>email</code>:</p>
+
+  <table>
+    <thead>
+      <tr><th>column_name</th><th>data_type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>id</td><td>uuid</td></tr>
+      <tr><td>condominio</td><td>text</td></tr>
+      <tr><td>cidade</td><td>text</td></tr>
+      <tr><td>tipo_servico</td><td>text</td></tr>
+      <tr><td>valor_estimado</td><td>numeric</td></tr>
+      <tr><td>status</td><td>text</td></tr>
+      <tr><td>proxima_acao</td><td>text</td></tr>
+      <tr><td>nome_contato</td><td>text</td></tr>
+      <tr><td>telefone</td><td>text</td></tr>
+      <tr style="background: rgba(45,142,94,0.1); font-weight: 700;">
+        <td style="color: var(--success);">email</td>
+        <td style="color: var(--success);">text</td>
+      </tr>
+      <tr><td>administradora</td><td>text</td></tr>
+      <tr><td>observacoes</td><td>text</td></tr>
+      <tr><td>probabilidade</td><td>integer</td></tr>
+      <tr><td>...</td><td>...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box box-tip">
+    <strong>Tudo certo!</strong> Se <code>email</code> aparece na lista, o problema esta resolvido permanentemente.
+  </div>
+
+  <div class="doc-footer">
+    <p>Guia de Correcao — DIBREVA Mini ERP &middot; Fevereiro 2026</p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA CRM - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    /* ===== DIBREVA Brand Tokens (Identidade Original) ===== */
+    :root {
+      --laranja: #D46250;
+      --laranja-hover: #C0574A;
+      --laranja2: #D37E53;
+      --azul: #1D2A3A;
+      --azul-light: #2A3D52;
+      --cinza: #A6B0B3;
+      --cinza-light: #C8CED0;
+      --cinza-bg: #EEF1F2;
+      --white: #FFFFFF;
+      --bg: #F4F6F7;
+      --success: #2D8E5E;
+      --warning: #E5A100;
+      --danger: #C43B3B;
+      --info: #3A7BBF;
+      --radius: 10px;
+      --shadow-sm: 0 1px 3px rgba(29,42,58,0.07);
+      --shadow-md: 0 4px 14px rgba(29,42,58,0.1);
+      --shadow-lg: 0 10px 30px rgba(29,42,58,0.14);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--azul);
+      min-height: 100vh;
+      font-weight: 300;
+    }
+
+    /* ===== Sidebar ===== */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--azul);
+      padding: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* Sidebar top area with wireframe bg pattern */
+    .sidebar-brand {
+      padding: 28px 24px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar-brand::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px),
+        repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px);
+    }
+
+    .sidebar-logo { position: relative; z-index: 1; }
+    .sidebar-logo svg { width: 180px; height: auto; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: rgba(212,98,80,0.3);
+      margin: 0 24px 20px;
+    }
+
+    .sidebar-section {
+      padding: 0 24px;
+      margin-bottom: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--cinza);
+    }
+
+    .sidebar-nav { list-style: none; margin-bottom: 24px; }
+
+    .sidebar-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 24px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar-nav li a:hover {
+      background: rgba(212,98,80,0.08);
+      color: var(--white);
+    }
+
+    .sidebar-nav li a.active {
+      background: rgba(212,98,80,0.12);
+      color: var(--laranja);
+      border-left-color: var(--laranja);
+      font-weight: 600;
+    }
+
+    .sidebar-nav li a .nav-icon {
+      width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .sidebar-nav li a .nav-icon svg {
+      width: 18px; height: 18px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 18px 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-footer .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-footer .user-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--laranja);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .sidebar-footer .user-name {
+      color: rgba(255,255,255,0.85);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .sidebar-footer .user-role {
+      color: var(--cinza);
+      font-size: 11px;
+      margin-top: 1px;
+    }
+
+    /* ===== Main Content ===== */
+    .main {
+      margin-left: 260px;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .header-left h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 26px;
+      color: var(--azul);
+      letter-spacing: -0.5px;
+    }
+
+    .header-left p {
+      color: var(--cinza);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--laranja);
+      color: var(--white);
+    }
+
+    .btn-primary:hover { background: var(--laranja-hover); }
+
+    .btn-outline {
+      background: var(--white);
+      color: var(--azul-light);
+      border: 1.5px solid var(--cinza-light);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--laranja);
+      color: var(--laranja);
+    }
+
+    /* ===== KPI Cards ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .kpi-card.total::before { background: var(--azul); }
+    .kpi-card.contato::before { background: var(--info); }
+    .kpi-card.proposta::before { background: var(--laranja2); }
+    .kpi-card.aguardando::before { background: var(--warning); }
+    .kpi-card.fechado::before { background: var(--success); }
+
+    .kpi-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .kpi-icon svg {
+      width: 20px; height: 20px;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      fill: none;
+    }
+
+    .kpi-card.total .kpi-icon { background: rgba(29,42,58,0.08); }
+    .kpi-card.total .kpi-icon svg { stroke: var(--azul); }
+    .kpi-card.contato .kpi-icon { background: rgba(58,123,191,0.1); }
+    .kpi-card.contato .kpi-icon svg { stroke: var(--info); }
+    .kpi-card.proposta .kpi-icon { background: rgba(211,126,83,0.1); }
+    .kpi-card.proposta .kpi-icon svg { stroke: var(--laranja2); }
+    .kpi-card.aguardando .kpi-icon { background: rgba(229,161,0,0.1); }
+    .kpi-card.aguardando .kpi-icon svg { stroke: var(--warning); }
+    .kpi-card.fechado .kpi-icon { background: rgba(45,142,94,0.1); }
+    .kpi-card.fechado .kpi-icon svg { stroke: var(--success); }
+
+    .kpi-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--cinza);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--azul);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--cinza);
+    }
+
+    /* ===== Section Title ===== */
+    .section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--azul);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .accent-bar {
+      display: inline-block;
+      width: 4px; height: 20px;
+      background: var(--laranja);
+      border-radius: 2px;
+    }
+
+    /* ===== Pipeline ===== */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .pipeline-stage {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .pipeline-header {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pipeline-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .pipeline-header .count {
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pipeline-body {
+      padding: 8px 10px 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      border-top: 2px solid;
+    }
+
+    .pipeline-body::-webkit-scrollbar { width: 3px; }
+    .pipeline-body::-webkit-scrollbar-thumb { background: var(--cinza-light); border-radius: 2px; }
+
+    .pipeline-card {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .pipeline-card:hover {
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+      border-left-color: var(--laranja);
+    }
+
+    .pipeline-card:last-child { margin-bottom: 0; }
+
+    .pipeline-card .client-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--azul);
+      margin-bottom: 3px;
+    }
+
+    .pipeline-card .condo-name {
+      font-size: 11px;
+      color: var(--cinza);
+    }
+
+    .pipeline-card .service-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .tag-informe { background: rgba(58,123,191,0.1); color: var(--info); }
+    .tag-vistoria { background: rgba(45,142,94,0.1); color: var(--success); }
+
+    /* Stage-specific colors */
+    .stage-contato .pipeline-header { background: rgba(58,123,191,0.05); }
+    .stage-contato .pipeline-header h3 { color: var(--info); }
+    .stage-contato .count { background: rgba(58,123,191,0.1); color: var(--info); }
+    .stage-contato .pipeline-body { border-top-color: var(--info); }
+
+    .stage-informe .pipeline-header { background: rgba(29,42,58,0.04); }
+    .stage-informe .pipeline-header h3 { color: var(--azul-light); }
+    .stage-informe .count { background: rgba(29,42,58,0.08); color: var(--azul-light); }
+    .stage-informe .pipeline-body { border-top-color: var(--azul-light); }
+
+    .stage-proposta .pipeline-header { background: rgba(211,126,83,0.06); }
+    .stage-proposta .pipeline-header h3 { color: var(--laranja2); }
+    .stage-proposta .count { background: rgba(211,126,83,0.1); color: var(--laranja2); }
+    .stage-proposta .pipeline-body { border-top-color: var(--laranja2); }
+
+    .stage-aguardando .pipeline-header { background: rgba(229,161,0,0.05); }
+    .stage-aguardando .pipeline-header h3 { color: var(--warning); }
+    .stage-aguardando .count { background: rgba(229,161,0,0.1); color: var(--warning); }
+    .stage-aguardando .pipeline-body { border-top-color: var(--warning); }
+
+    .stage-vistoria .pipeline-header { background: rgba(45,142,94,0.05); }
+    .stage-vistoria .pipeline-header h3 { color: var(--success); }
+    .stage-vistoria .count { background: rgba(45,142,94,0.1); color: var(--success); }
+    .stage-vistoria .pipeline-body { border-top-color: var(--success); }
+
+    .stage-negacao .pipeline-header { background: rgba(196,59,59,0.05); }
+    .stage-negacao .pipeline-header h3 { color: var(--danger); }
+    .stage-negacao .count { background: rgba(196,59,59,0.1); color: var(--danger); }
+    .stage-negacao .pipeline-body { border-top-color: var(--danger); }
+
+    /* ===== Charts ===== */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .chart-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .chart-card h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--azul);
+      margin-bottom: 20px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+    }
+
+    /* ===== Table ===== */
+    .table-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 28px;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .table-header {
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--cinza-bg);
+    }
+
+    .table-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .table-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-input {
+      padding: 8px 14px 8px 36px;
+      border: 1.5px solid var(--cinza-light);
+      border-radius: 8px;
+      font-family: Calibri, sans-serif;
+      font-size: 14px;
+      outline: none;
+      width: 260px;
+      background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A6B0B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 12px center;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--laranja);
+      background-color: var(--white);
+    }
+
+    .filter-select {
+      padding: 8px 32px 8px 12px;
+      border: 1.5px solid var(--cinza-light);
+      border-radius: 8px;
+      font-family: Calibri, sans-serif;
+      font-size: 14px;
+      outline: none;
+      background: var(--bg);
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A6B0B3' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .filter-select:focus { border-color: var(--laranja); }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      padding: 11px 16px;
+      text-align: left;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--cinza);
+      background: var(--cinza-bg);
+      border-bottom: 1px solid var(--cinza-light);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead th:hover { color: var(--azul); }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(166,176,179,0.15);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: rgba(244,246,247,0.7); }
+
+    tbody td {
+      padding: 13px 16px;
+      font-size: 14px;
+      color: var(--azul-light);
+    }
+
+    .td-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--azul);
+    }
+
+    .td-condo { color: var(--azul-light); }
+
+    .td-phone {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-contato { background: rgba(58,123,191,0.1); color: var(--info); }
+    .status-informe { background: rgba(29,42,58,0.08); color: var(--azul-light); }
+    .status-proposta { background: rgba(211,126,83,0.12); color: var(--laranja2); }
+    .status-aguardando { background: rgba(229,161,0,0.1); color: #B88200; }
+    .status-vistoria { background: rgba(45,142,94,0.1); color: var(--success); }
+    .status-negacao { background: rgba(196,59,59,0.1); color: var(--danger); }
+
+    .table-footer {
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--cinza-bg);
+      font-size: 13px;
+      color: var(--cinza);
+    }
+
+    .table-footer .pagination {
+      display: flex;
+      gap: 4px;
+    }
+
+    .table-footer .pagination button {
+      width: 32px; height: 32px;
+      border: 1px solid var(--cinza-light);
+      background: var(--white);
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--azul-light);
+      transition: all 0.2s;
+    }
+
+    .table-footer .pagination button:hover,
+    .table-footer .pagination button.active {
+      background: var(--laranja);
+      color: var(--white);
+      border-color: var(--laranja);
+    }
+
+    /* ===== Brand Footer ===== */
+    .brand-footer {
+      text-align: center;
+      padding: 32px;
+    }
+
+    .brand-footer .tagline {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--laranja);
+      margin-bottom: 4px;
+    }
+
+    .brand-footer .sub {
+      font-size: 12px;
+      color: var(--cinza);
+      letter-spacing: 1px;
+    }
+
+    /* ===== Modal ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(29,42,58,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: var(--radius);
+      width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--cinza-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 17px; font-weight: 700;
+    }
+    .modal-close {
+      width: 32px; height: 32px; border: none; background: none;
+      cursor: pointer; font-size: 20px; color: var(--cinza);
+      border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--cinza-bg); }
+    .modal-body { padding: 24px; }
+    .modal-body .field { margin-bottom: 16px; }
+    .modal-body .field label {
+      display: block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px; font-weight: 700;
+      color: var(--cinza); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .modal-body .field input,
+    .modal-body .field select {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--cinza-light); border-radius: 8px;
+      font-family: Calibri, sans-serif; font-size: 14px;
+      outline: none;
+    }
+    .modal-body .field input:focus,
+    .modal-body .field select:focus { border-color: var(--laranja); }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--cinza-bg);
+      display: flex; justify-content: flex-end; gap: 12px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1400px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .pipeline { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { width: 68px; }
+      .sidebar-brand { padding: 16px 10px; }
+      .sidebar-brand .wordmark { display: none; }
+      .sidebar-divider { margin: 0 10px 16px; }
+      .sidebar-section { display: none; }
+      .sidebar-nav li a { padding: 12px 0; justify-content: center; }
+      .sidebar-nav li a span.nav-label { display: none; }
+      .sidebar-footer .user-name, .sidebar-footer .user-role { display: none; }
+      .sidebar-footer { padding: 12px; justify-content: center; }
+      .main { margin-left: 68px; padding: 20px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .pipeline { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Animations ===== */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kpi-card, .pipeline-stage, .chart-card, .table-card {
+      animation: fadeUp 0.4s ease-out both;
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+    .kpi-card:nth-child(5) { animation-delay: 0.25s; }
+  </style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">
+      <!-- DIBREVA Logo Original: retangulo (edificio) + 3 chevrons (setas para cima) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 70" width="220" height="70">
+        <!-- Retangulo (edificio) -->
+        <rect x="8" y="8" width="32" height="44" rx="1.5"
+              fill="none" stroke="#A6B0B3" stroke-width="2.2" opacity="0.5"/>
+        <!-- 3 Chevrons (setas para cima) em laranja -->
+        <path d="M 27,50 L 38,40 L 49,50" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 27,42 L 38,32 L 49,42" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 27,34 L 38,24 L 49,34" fill="none" stroke="#D46250" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Wordmark -->
+        <text class="wordmark" x="62" y="38" font-family="'Montserrat', 'Helvetica Neue', Arial, sans-serif"
+              font-weight="800" font-size="22" letter-spacing="4" fill="#FFFFFF">DIBREVA</text>
+        <text class="wordmark" x="62" y="54" font-family="Calibri, 'Segoe UI', sans-serif"
+              font-weight="300" font-size="8" letter-spacing="1.8" fill="#A6B0B3">Manuten&#xE7;&#xE3;o &amp; Restaura&#xE7;&#xE3;o Predial</text>
+      </svg>
+    </div>
+  </div>
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section">Principal</div>
+  <ul class="sidebar-nav">
+    <li><a href="#" class="active">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      <span class="nav-label">Dashboard</span>
+    </a></li>
+    <li><a href="#">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-label">Clientes</span>
+    </a></li>
+    <li><a href="#">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span>
+      <span class="nav-label">Propostas</span>
+    </a></li>
+    <li><a href="#">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span class="nav-label">Vistorias</span>
+    </a></li>
+  </ul>
+
+  <div class="sidebar-section">Relatorios</div>
+  <ul class="sidebar-nav">
+    <li><a href="#">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+      <span class="nav-label">Desempenho</span>
+    </a></li>
+    <li><a href="#">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span class="nav-label">Financeiro</span>
+    </a></li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">VL</div>
+      <div>
+        <div class="user-name">Vanessa Lobo</div>
+        <div class="user-role">CAU/SC A185622-7</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Dashboard CRM</h1>
+      <p>Pipeline comercial DIBREVA &mdash; Atualizado em 26/02/2026</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" onclick="exportCSV()">&#8681; Exportar CSV</button>
+      <button class="btn btn-primary" onclick="openModal()">+ Novo Cliente</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card total">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="kpi-label">Total de Clientes</div>
+      <div class="kpi-value" id="kpi-total">0</div>
+      <div class="kpi-sub">Todos os registros ativos</div>
+    </div>
+    <div class="kpi-card contato">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></div>
+      <div class="kpi-label">Contato Inicial</div>
+      <div class="kpi-value" id="kpi-contato">0</div>
+      <div class="kpi-sub">Primeiro contato realizado</div>
+    </div>
+    <div class="kpi-card proposta">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="kpi-label">Envio de Proposta</div>
+      <div class="kpi-value" id="kpi-proposta">0</div>
+      <div class="kpi-sub">Propostas enviadas</div>
+    </div>
+    <div class="kpi-card aguardando">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="kpi-label">Aguardando Retorno</div>
+      <div class="kpi-value" id="kpi-aguardando">0</div>
+      <div class="kpi-sub">Aguardando resposta</div>
+    </div>
+    <div class="kpi-card fechado">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="kpi-label">Vistoria Agendada</div>
+      <div class="kpi-value" id="kpi-vistoria">0</div>
+      <div class="kpi-sub">Proximas vistorias</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="section-title">
+    <span class="accent-bar"></span> Pipeline Comercial
+  </div>
+  <div class="pipeline" id="pipeline-container"></div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Distribuicao por Status</h3>
+      <div class="chart-container">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Clientes por Cidade</h3>
+      <div class="chart-container">
+        <canvas id="cityChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Todos os Clientes</h3>
+      <div class="table-controls">
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar cliente ou condominio..." oninput="filterTable()">
+        <select class="filter-select" id="statusFilter" onchange="filterTable()">
+          <option value="">Todos os status</option>
+          <option value="Contato inicial">Contato inicial</option>
+          <option value="Informe externo">Informe externo</option>
+          <option value="Envio da proposta">Envio da proposta</option>
+          <option value="Aguardando Retorno">Aguardando Retorno</option>
+          <option value="Vistoria agendada">Vistoria agendada</option>
+          <option value="Negacao externa">Negacao externa</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('nome')">Nome &#8597;</th>
+            <th onclick="sortTable('condominio')">Condominio &#8597;</th>
+            <th>Servicos</th>
+            <th>Telefone</th>
+            <th onclick="sortTable('status')">Status &#8597;</th>
+          </tr>
+        </thead>
+        <tbody id="clientTableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="tableInfo">Mostrando 0 de 0 clientes</span>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Brand Footer -->
+  <div class="brand-footer">
+    <div class="tagline">Manutencao &amp; Restauracao Predial</div>
+    <div class="sub">DIBREVA &mdash; Devolvemos o estado de arte ao seu edificio</div>
+  </div>
+
+</main>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Novo Cliente</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nome</label>
+        <input type="text" id="newNome" placeholder="Nome do cliente">
+      </div>
+      <div class="field">
+        <label>Condominio</label>
+        <input type="text" id="newCondo" placeholder="Nome do condominio">
+      </div>
+      <div class="field">
+        <label>Servicos</label>
+        <select id="newServico">
+          <option value="">Selecione...</option>
+          <option value="Informe externo">Informe externo</option>
+          <option value="Vistoria agendada">Vistoria agendada</option>
+          <option value="Orcamento">Orcamento</option>
+          <option value="Reforma">Reforma</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <input type="text" id="newTelefone" placeholder="(00) 00000-0000">
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="newStatus">
+          <option value="Contato inicial">Contato inicial</option>
+          <option value="Informe externo">Informe externo</option>
+          <option value="Envio da proposta">Envio da proposta</option>
+          <option value="Aguardando Retorno">Aguardando Retorno</option>
+          <option value="Vistoria agendada">Vistoria agendada</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="addClient()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CLIENT DATA (from Notion CRM) =====
+const clients = [
+  { nome: "Cristiano", condominio: "Edf Edmar - Ararangua", servico: "Informe externo", telefone: "49 00048-3068", status: "Aguardando Retorno" },
+  { nome: "Lara e Mauricio", condominio: "Gabieno", servico: "Informe externo", telefone: "", status: "Contato inicial" },
+  { nome: "Rosa", condominio: "Agrima Freitas", servico: "Informe externo", telefone: "49 99813-0536", status: "Aguardando Retorno" },
+  { nome: "Henrique / Giovane", condominio: "ACIC", servico: "", telefone: "49 90649-8722", status: "Aguardando Retorno" },
+  { nome: "Thiago", condominio: "Centenario", servico: "Informe externo", telefone: "48 99635-2041", status: "Aguardando Retorno" },
+  { nome: "Mindset", condominio: "Baldissera", servico: "Informe externo", telefone: "48 99929-2182", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Bambuca - Ainoas", servico: "", telefone: "", status: "Envio da proposta" },
+  { nome: "Jorge", condominio: "Fontana di Trevi", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Devale - Ararangua", servico: "", telefone: "", status: "Envio da proposta" },
+  { nome: "Mindset - Mabiano", condominio: "Del Rey", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Gabriela", servico: "", telefone: "", status: "Negacao externa" },
+  { nome: "Edmilson", condominio: "Simone", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Gustavo", condominio: "Vanessa", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Nadir Ferreira - Sao Joaquim", servico: "", telefone: "", status: "Envio da proposta" },
+  { nome: "Rafaela", condominio: "Felicita", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Giacomo Mazuco", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Jaque", condominio: "Igreja Linha Cabral", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Luiz", condominio: "La Venta", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Lidi Camargo", condominio: "Le Village", servico: "Informe externo", telefone: "48 99062-3811", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Marigold - Ararangua", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Richard", condominio: "Mistral", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Erika", condominio: "Moinhos do Vento", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Monte Carlo - Rincao", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Eduarda", condominio: "Mont Royal", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Edison", condominio: "Outo Preto", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Mindset", condominio: "Porto Fino", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Di Rosa - Ararangua", servico: "", telefone: "", status: "Contato inicial" },
+  { nome: "Carlito", condominio: "Heineman - Ararangua", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Antonio", condominio: "Rocha - Maccaer", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Reserva Residence - Arroio", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Mindset", condominio: "San Marine", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Sidica Serra Dourada", condominio: "Serra Dourada", servico: "", telefone: "", status: "Informe externo" },
+  { nome: "Carlito", condominio: "Solar das Avenidas - Ararangua", servico: "Informe externo", telefone: "", status: "Contato inicial" },
+  { nome: "Simone", condominio: "Trevisan", servico: "Informe externo", telefone: "", status: "Informe externo" },
+  { nome: "Celso", condominio: "Vinicio Leal", servico: "", telefone: "48 98404-4834", status: "Contato inicial" },
+  { nome: "Francielle", condominio: "Vogue - Ararangua", servico: "Informe externo", telefone: "48 99429-6880", status: "Envio da proposta" },
+  { nome: "Zelir", condominio: "Quatro Estacoes - Bal. Camboriu", servico: "Informe externo", telefone: "47 99968-2351", status: "Informe externo" },
+  { nome: "Rodrigo", condominio: "San Felice - Cocal do Sul", servico: "Informe externo", telefone: "48 99924-5474", status: "Contato inicial" },
+];
+
+// ===== STATUS CONFIG =====
+const statusConfig = {
+  "Contato inicial":    { class: "status-contato",    stageClass: "stage-contato",    order: 1 },
+  "Informe externo":    { class: "status-informe",    stageClass: "stage-informe",    order: 2 },
+  "Envio da proposta":  { class: "status-proposta",   stageClass: "stage-proposta",   order: 3 },
+  "Aguardando Retorno": { class: "status-aguardando", stageClass: "stage-aguardando", order: 4 },
+  "Vistoria agendada":  { class: "status-vistoria",   stageClass: "stage-vistoria",   order: 5 },
+  "Negacao externa":    { class: "status-negacao",     stageClass: "stage-negacao",    order: 6 },
+};
+
+const statusColors = {
+  "Contato inicial":    "#3A7BBF",
+  "Informe externo":    "#2A3D52",
+  "Envio da proposta":  "#D37E53",
+  "Aguardando Retorno": "#E5A100",
+  "Vistoria agendada":  "#2D8E5E",
+  "Negacao externa":    "#C43B3B",
+};
+
+// ===== STATE =====
+let sortField = "";
+let sortDir = 1;
+let currentPage = 1;
+const perPage = 15;
+
+// ===== INIT =====
+function init() {
+  updateKPIs();
+  renderPipeline();
+  renderCharts();
+  renderTable();
+}
+
+// ===== KPIs =====
+function updateKPIs() {
+  const counts = {};
+  clients.forEach(c => { counts[c.status] = (counts[c.status] || 0) + 1; });
+  document.getElementById('kpi-total').textContent = clients.length;
+  document.getElementById('kpi-contato').textContent = counts["Contato inicial"] || 0;
+  document.getElementById('kpi-proposta').textContent = counts["Envio da proposta"] || 0;
+  document.getElementById('kpi-aguardando').textContent = counts["Aguardando Retorno"] || 0;
+  document.getElementById('kpi-vistoria').textContent = counts["Vistoria agendada"] || 0;
+}
+
+// ===== PIPELINE =====
+function renderPipeline() {
+  const container = document.getElementById('pipeline-container');
+  const stages = {};
+  clients.forEach(c => {
+    if (!stages[c.status]) stages[c.status] = [];
+    stages[c.status].push(c);
+  });
+
+  const orderedStatuses = Object.keys(statusConfig).sort((a, b) => statusConfig[a].order - statusConfig[b].order);
+  container.innerHTML = orderedStatuses.map(status => {
+    const items = stages[status] || [];
+    const cfg = statusConfig[status];
+    return `
+      <div class="pipeline-stage ${cfg.stageClass}">
+        <div class="pipeline-header">
+          <h3>${status}</h3>
+          <span class="count">${items.length}</span>
+        </div>
+        <div class="pipeline-body">
+          ${items.map(c => `
+            <div class="pipeline-card">
+              <div class="client-name">${c.nome}</div>
+              <div class="condo-name">${c.condominio}</div>
+              ${c.servico ? `<span class="service-tag tag-informe">${c.servico}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== CHARTS =====
+function renderCharts() {
+  const statusCounts = {};
+  clients.forEach(c => { statusCounts[c.status] = (statusCounts[c.status] || 0) + 1; });
+  const labels = Object.keys(statusCounts);
+  const data = labels.map(l => statusCounts[l]);
+  const colors = labels.map(l => statusColors[l] || '#A6B0B3');
+
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { family: "'Montserrat', sans-serif", size: 11, weight: '600' },
+            color: '#1D2A3A',
+            padding: 14,
+            usePointStyle: true,
+            pointStyleWidth: 10,
+          }
+        }
+      }
+    }
+  });
+
+  // City distribution
+  const cityCounts = {};
+  clients.forEach(c => {
+    const parts = c.condominio.split(' - ');
+    const city = parts.length > 1 ? parts[parts.length - 1].trim() : 'Criciuma';
+    cityCounts[city] = (cityCounts[city] || 0) + 1;
+  });
+  const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: sortedCities.map(c => c[0]),
+      datasets: [{
+        data: sortedCities.map(c => c[1]),
+        backgroundColor: '#D46250',
+        borderRadius: 5,
+        borderSkipped: false,
+        barPercentage: 0.55,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { color: 'rgba(166,176,179,0.15)' },
+          ticks: { font: { family: "'Montserrat', sans-serif", size: 11, weight: '500' }, color: '#A6B0B3' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: "'Montserrat', sans-serif", size: 11, weight: '600' }, color: '#1D2A3A' }
+        }
+      }
+    }
+  });
+}
+
+// ===== TABLE =====
+function getFilteredClients() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const statusF = document.getElementById('statusFilter').value;
+  return clients.filter(c => {
+    const matchSearch = !search ||
+      c.nome.toLowerCase().includes(search) ||
+      c.condominio.toLowerCase().includes(search) ||
+      c.telefone.includes(search);
+    const matchStatus = !statusF || c.status === statusF;
+    return matchSearch && matchStatus;
+  });
+}
+
+function sortTable(field) {
+  if (sortField === field) sortDir *= -1;
+  else { sortField = field; sortDir = 1; }
+  renderTable();
+}
+
+function renderTable() {
+  let filtered = getFilteredClients();
+  if (sortField) {
+    filtered.sort((a, b) => {
+      const va = a[sortField] || '';
+      const vb = b[sortField] || '';
+      return va.localeCompare(vb, 'pt-BR') * sortDir;
+    });
+  }
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  if (currentPage > totalPages) currentPage = totalPages || 1;
+  const start = (currentPage - 1) * perPage;
+  const pageData = filtered.slice(start, start + perPage);
+
+  const tbody = document.getElementById('clientTableBody');
+  tbody.innerHTML = pageData.map(c => {
+    const cfg = statusConfig[c.status] || { class: 'status-informe' };
+    const serviceTag = c.servico
+      ? `<span class="service-tag tag-informe">${c.servico}</span>`
+      : '<span style="color: var(--cinza); font-size:12px;">—</span>';
+    return `
+      <tr>
+        <td class="td-name">${c.nome}</td>
+        <td class="td-condo">${c.condominio}</td>
+        <td>${serviceTag}</td>
+        <td class="td-phone">${c.telefone || '—'}</td>
+        <td><span class="status-badge ${cfg.class}">${c.status}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('tableInfo').textContent =
+    `Mostrando ${start + 1}–${Math.min(start + perPage, filtered.length)} de ${filtered.length} clientes`;
+
+  const pag = document.getElementById('pagination');
+  let pagHTML = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pagHTML += `<button class="${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  pag.innerHTML = pagHTML;
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+function filterTable() { currentPage = 1; renderTable(); }
+
+// ===== MODAL =====
+function openModal() { document.getElementById('modalOverlay').classList.add('active'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+function addClient() {
+  const nome = document.getElementById('newNome').value.trim();
+  const condo = document.getElementById('newCondo').value.trim();
+  const servico = document.getElementById('newServico').value;
+  const telefone = document.getElementById('newTelefone').value.trim();
+  const status = document.getElementById('newStatus').value;
+  if (!nome) { alert('Informe o nome do cliente.'); return; }
+  clients.push({ nome, condominio: condo, servico, telefone, status });
+  closeModal();
+  document.getElementById('newNome').value = '';
+  document.getElementById('newCondo').value = '';
+  document.getElementById('newTelefone').value = '';
+  updateKPIs();
+  renderPipeline();
+  renderTable();
+}
+
+// ===== EXPORT CSV =====
+function exportCSV() {
+  const header = 'Nome,Condominio,Servicos,Telefone,Status\n';
+  const rows = clients.map(c =>
+    `"${c.nome}","${c.condominio}","${c.servico}","${c.telefone}","${c.status}"`
+  ).join('\n');
+  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `dibreva-crm-${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
+
+// ===== EVENTS =====
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>

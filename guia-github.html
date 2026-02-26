@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia GitHub — Entenda do Zero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --laranja: #D46250;
+      --azul: #1D2A3A;
+      --azul-light: #2A3D52;
+      --cinza: #A6B0B3;
+      --success: #2D8E5E;
+      --warning: #E5A100;
+      --info: #3A7BBF;
+      --danger: #C43B3B;
+    }
+    @page { margin: 2cm; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Calibri, 'Segoe UI', sans-serif;
+      color: var(--azul);
+      background: #fff;
+      line-height: 1.7;
+      font-size: 14px;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .doc-header {
+      text-align: center;
+      border-bottom: 3px solid var(--laranja);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .doc-header h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .doc-header p { color: var(--cinza); }
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 32px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #EEF1F2;
+    }
+    h2 .num {
+      display: inline-block;
+      background: var(--laranja);
+      color: #fff;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      text-align: center;
+      line-height: 30px;
+      font-size: 15px;
+      margin-right: 10px;
+    }
+
+    h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--azul-light);
+      margin: 18px 0 8px;
+    }
+
+    p { margin-bottom: 10px; }
+    ul, ol { margin: 8px 0 14px 24px; }
+    li { margin-bottom: 6px; }
+
+    code {
+      background: #F0F2F4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    pre {
+      background: #1E1E2E;
+      color: #CDD6F4;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 10px 0 16px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    pre .comment { color: #6C7086; }
+    pre .cmd { color: #A6E3A1; }
+    pre .flag { color: #CBA6F7; }
+    pre .str { color: #F9E2AF; }
+
+    .box {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 12px 0 16px;
+      font-size: 13px;
+    }
+    .box-analogy {
+      background: rgba(58,123,191,0.06);
+      border-left: 4px solid var(--info);
+    }
+    .box-analogy strong { color: var(--info); }
+    .box-tip {
+      background: rgba(45,142,94,0.06);
+      border-left: 4px solid var(--success);
+    }
+    .box-tip strong { color: var(--success); }
+    .box-warn {
+      background: rgba(229,161,0,0.06);
+      border-left: 4px solid var(--warning);
+    }
+    .box-warn strong { color: var(--warning); }
+    .box-danger {
+      background: rgba(196,59,59,0.06);
+      border-left: 4px solid var(--danger);
+    }
+    .box-danger strong { color: var(--danger); }
+
+    .diagram {
+      background: #F4F6F7;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 14px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 2;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 13px;
+    }
+    th {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    td { padding: 8px 14px; border-bottom: 1px solid #EEF1F2; }
+    tr:nth-child(even) { background: #FAFBFC; }
+
+    .steps {
+      list-style: none;
+      counter-reset: step;
+      margin-left: 0;
+    }
+    .steps li {
+      counter-increment: step;
+      padding: 12px 16px 12px 54px;
+      position: relative;
+      margin-bottom: 8px;
+      background: #FAFBFC;
+      border-radius: 8px;
+      border: 1px solid #EEF1F2;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px; top: 12px;
+      width: 28px; height: 28px;
+      background: var(--laranja);
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+    .visual-card {
+      flex: 1;
+      min-width: 200px;
+      background: #F4F6F7;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .visual-card .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .visual-card h4 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .visual-card p {
+      font-size: 12px;
+      color: var(--cinza);
+      margin: 0;
+    }
+
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 2px solid #EEF1F2;
+      font-size: 11px;
+      color: var(--cinza);
+      text-align: center;
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--laranja);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212,98,80,0.3);
+    }
+    .print-btn:hover { background: #C0574A; }
+    @media print {
+      body { padding: 0; max-width: none; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+
+  <div class="doc-header">
+    <h1>GitHub — Entenda do Zero</h1>
+    <p>O que é, como funciona e como usar no dia a dia</p>
+    <p style="font-size: 12px; margin-top: 4px;">Guia prático para não-programadores · Fevereiro 2026</p>
+  </div>
+
+  <!-- O QUE É -->
+  <h2><span class="num">1</span> O que é o GitHub?</h2>
+
+  <div class="box box-analogy">
+    <strong>Analogia simples:</strong> O GitHub é como um <strong>Google Drive para código</strong>. Você guarda seus arquivos lá, tem histórico de todas as mudanças, e pode compartilhar com qualquer pessoa via link.
+  </div>
+
+  <p>Mas ele faz mais que um Drive:</p>
+
+  <div class="visual">
+    <div class="visual-card">
+      <div class="icon">📁</div>
+      <h4>Guarda arquivos</h4>
+      <p>Seus HTML, CSS, JS ficam salvos na nuvem</p>
+    </div>
+    <div class="visual-card">
+      <div class="icon">📜</div>
+      <h4>Histórico completo</h4>
+      <p>Cada mudança fica registrada — pode voltar atrás</p>
+    </div>
+    <div class="visual-card">
+      <div class="icon">🌐</div>
+      <h4>Publica sites</h4>
+      <p>GitHub Pages transforma seus arquivos em site público</p>
+    </div>
+    <div class="visual-card">
+      <div class="icon">👥</div>
+      <h4>Colaboração</h4>
+      <p>Outras pessoas podem ver e contribuir</p>
+    </div>
+  </div>
+
+  <!-- CONCEITOS -->
+  <h2><span class="num">2</span> Conceitos Básicos (vocabulário)</h2>
+
+  <table>
+    <thead>
+      <tr><th>Termo</th><th>O que é</th><th>Analogia</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Repositório (repo)</strong></td>
+        <td>A pasta do seu projeto no GitHub</td>
+        <td>Uma pasta no Google Drive</td>
+      </tr>
+      <tr>
+        <td><strong>Commit</strong></td>
+        <td>Um "pacote de mudanças" salvo com descrição</td>
+        <td>Um ponto de salvamento (como num jogo)</td>
+      </tr>
+      <tr>
+        <td><strong>Push</strong></td>
+        <td>Enviar seus commits para o GitHub</td>
+        <td>Fazer upload para o Drive</td>
+      </tr>
+      <tr>
+        <td><strong>Pull</strong></td>
+        <td>Baixar mudanças do GitHub para seu PC</td>
+        <td>Fazer download do Drive</td>
+      </tr>
+      <tr>
+        <td><strong>Branch</strong></td>
+        <td>Uma "cópia paralela" do projeto para testar algo</td>
+        <td>Fazer uma cópia do documento antes de editar</td>
+      </tr>
+      <tr>
+        <td><strong>GitHub Pages</strong></td>
+        <td>Recurso que transforma um repo em site público</td>
+        <td>Publicar um Google Doc como página web</td>
+      </tr>
+      <tr>
+        <td><strong>Clone</strong></td>
+        <td>Copiar um repo do GitHub para seu computador</td>
+        <td>Baixar uma pasta do Drive para o PC</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- COMO FUNCIONA -->
+  <h2><span class="num">3</span> Como funciona na prática</h2>
+
+  <p>O fluxo é sempre o mesmo, em 3 etapas:</p>
+
+  <div class="diagram">Seu Mac (local)                     GitHub (nuvem)                  Site público
+┌─────────────────┐                ┌──────────────────┐            ┌──────────────────┐
+│                 │   git push     │                  │  auto      │                  │
+│  Seus arquivos  │ ──────────────>│  Repositório     │ ─────────> │  GitHub Pages    │
+│  CRM-DIBREVA/   │                │  dibreva-crm     │            │  seu-link.github │
+│                 │   git pull     │                  │            │  .io/dibreva-crm │
+│  (você edita    │ <──────────────│  (backup +       │            │                  │
+│   aqui)         │                │   histórico)     │            │  (qualquer pessoa│
+│                 │                │                  │            │   acessa)        │
+└─────────────────┘                └──────────────────┘            └──────────────────┘</div>
+
+  <div class="box box-tip">
+    <strong>Resumo:</strong> Você edita no Mac → envia para o GitHub (push) → o site atualiza sozinho em 1-2 minutos.
+  </div>
+
+  <!-- O SEU REPOSITÓRIO -->
+  <h2><span class="num">4</span> O seu repositório DIBREVA</h2>
+
+  <h3>4.1 Links importantes (salve nos favoritos!)</h3>
+  <table>
+    <thead>
+      <tr><th>O quê</th><th>Link</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Repositório</strong> (ver/editar código)</td><td>github.com/lobonessa13-code/dibreva-crm</td></tr>
+      <tr><td><strong>CRM</strong> (site público)</td><td>lobonessa13-code.github.io/dibreva-crm/crm.html</td></tr>
+      <tr><td><strong>Obras</strong></td><td>lobonessa13-code.github.io/dibreva-crm/obras.html</td></tr>
+      <tr><td><strong>Financeiro</strong></td><td>lobonessa13-code.github.io/dibreva-crm/financeiro.html</td></tr>
+      <tr><td><strong>POP</strong></td><td>lobonessa13-code.github.io/dibreva-crm/pop-mini-erp.html</td></tr>
+      <tr><td><strong>Guia ERP</strong></td><td>lobonessa13-code.github.io/dibreva-crm/guia-criar-mini-erp.html</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 Onde os arquivos estão</h3>
+  <table>
+    <thead>
+      <tr><th>Local</th><th>Caminho</th><th>Para quê</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>No seu Mac</td><td><code>~/Documents/CRM-DIBREVA/</code></td><td>Editar os arquivos</td></tr>
+      <tr><td>No GitHub</td><td><code>github.com/lobonessa13-code/dibreva-crm</code></td><td>Backup + publicação</td></tr>
+      <tr><td>Site público</td><td><code>lobonessa13-code.github.io/dibreva-crm/</code></td><td>Acesso de qualquer lugar</td></tr>
+    </tbody>
+  </table>
+
+  <!-- COMO ATUALIZAR -->
+  <h2><span class="num">5</span> Como atualizar o site (dia a dia)</h2>
+
+  <p>Quando você (ou o Claude) fizer mudanças nos arquivos, precisa enviar para o GitHub para o site atualizar:</p>
+
+  <ol class="steps">
+    <li>Abra o <strong>Terminal</strong> (Cmd+Espaço → digite "Terminal")</li>
+    <li>Entre na pasta do projeto:
+      <pre><span class="cmd">cd</span> ~/Documents/CRM-DIBREVA</pre>
+    </li>
+    <li>Veja o que mudou:
+      <pre><span class="cmd">git</span> status</pre>
+      <p>Aparece em vermelho os arquivos modificados.</p>
+    </li>
+    <li>Adicione as mudanças:
+      <pre><span class="cmd">git</span> add .</pre>
+      <p>O ponto (<code>.</code>) significa "tudo que mudou".</p>
+    </li>
+    <li>Crie um commit (ponto de salvamento) com uma descrição:
+      <pre><span class="cmd">git</span> commit <span class="flag">-m</span> <span class="str">"o que você mudou"</span></pre>
+      <p>Exemplos de mensagens:</p>
+      <ul>
+        <li><code>"adicionei campo telefone no lead"</code></li>
+        <li><code>"corrigi bug no financeiro"</code></li>
+        <li><code>"mudei cor do botão"</code></li>
+      </ul>
+    </li>
+    <li>Envie para o GitHub:
+      <pre><span class="cmd">git</span> push</pre>
+      <p>Pronto! Em 1-2 minutos o site atualiza automaticamente.</p>
+    </li>
+  </ol>
+
+  <div class="box box-tip">
+    <strong>Comando rápido (tudo junto):</strong>
+    <pre style="margin: 8px 0 0;"><span class="cmd">cd</span> ~/Documents/CRM-DIBREVA && <span class="cmd">git</span> add . && <span class="cmd">git</span> commit <span class="flag">-m</span> <span class="str">"descrição"</span> && <span class="cmd">git</span> push</pre>
+  </div>
+
+  <!-- QUANDO USAR CLAUDE CODE -->
+  <h2><span class="num">6</span> Quando o Claude Code faz mudanças</h2>
+
+  <p>Quando você pede para o Claude editar arquivos do projeto, ele edita <strong>no seu Mac</strong>. Depois, para o site atualizar, basta pedir:</p>
+
+  <div class="box box-analogy">
+    <strong>Diga para o Claude:</strong> "publica as mudanças" ou "faz push para o GitHub"<br>
+    Ele vai executar os comandos git automaticamente.
+  </div>
+
+  <p>Ou se preferir fazer você mesma no Terminal:</p>
+  <pre><span class="cmd">cd</span> ~/Documents/CRM-DIBREVA
+<span class="cmd">git</span> add .
+<span class="cmd">git</span> commit <span class="flag">-m</span> <span class="str">"atualizações do Claude"</span>
+<span class="cmd">git</span> push</pre>
+
+  <!-- VER HISTÓRICO -->
+  <h2><span class="num">7</span> Ver histórico de mudanças</h2>
+
+  <h3>7.1 No Terminal</h3>
+  <pre><span class="cmd">git</span> log <span class="flag">--oneline</span>
+
+<span class="comment"># Resultado exemplo:</span>
+<span class="str">5d424c3</span> docs: adicionar guia para criar novos Mini ERPs
+<span class="str">7fb7a2a</span> feat: Mini ERP DIBREVA v1.0</pre>
+
+  <p>Cada linha é um commit (ponto de salvamento). O código à esquerda é o ID único.</p>
+
+  <h3>7.2 No GitHub (visual)</h3>
+  <ol class="steps">
+    <li>Acesse <strong>github.com/lobonessa13-code/dibreva-crm</strong></li>
+    <li>Clique em <strong>"X commits"</strong> (perto do topo)</li>
+    <li>Veja a lista completa de mudanças, quem fez e quando</li>
+    <li>Clique em qualquer commit para ver exatamente o que mudou (verde = adicionado, vermelho = removido)</li>
+  </ol>
+
+  <!-- VOLTAR ATRÁS -->
+  <h2><span class="num">8</span> Voltar atrás (desfazer mudanças)</h2>
+
+  <h3>8.1 Desfazer mudanças antes de enviar</h3>
+  <p>Se editou um arquivo e quer voltar ao que era:</p>
+  <pre><span class="comment"># Desfazer mudanças em um arquivo específico</span>
+<span class="cmd">git</span> checkout <span class="flag">--</span> nome-do-arquivo.html
+
+<span class="comment"># Desfazer TUDO que mudou (cuidado!)</span>
+<span class="cmd">git</span> checkout <span class="flag">--</span> .</pre>
+
+  <h3>8.2 Ver versão antiga de um arquivo</h3>
+  <p>No GitHub, clique no arquivo → clique em "History" → veja todas as versões.</p>
+
+  <div class="box box-warn">
+    <strong>Regra de ouro:</strong> Se não tem certeza, <strong>não execute</strong> comandos com <code>--force</code> ou <code>reset --hard</code>. Pergunte antes.
+  </div>
+
+  <!-- CRIAR NOVO PROJETO -->
+  <h2><span class="num">9</span> Criar um novo projeto (outro ERP)</h2>
+
+  <p>Para criar um novo Mini ERP para outro cliente:</p>
+
+  <ol class="steps">
+    <li>Copie a pasta do DIBREVA:
+      <pre><span class="cmd">cp</span> <span class="flag">-r</span> ~/Documents/CRM-DIBREVA ~/Documents/NOVO-ERP</pre>
+    </li>
+    <li>Entre na nova pasta:
+      <pre><span class="cmd">cd</span> ~/Documents/NOVO-ERP</pre>
+    </li>
+    <li>Remova o Git antigo e inicie um novo:
+      <pre><span class="cmd">rm</span> <span class="flag">-rf</span> .git
+<span class="cmd">git</span> init
+<span class="cmd">git</span> checkout <span class="flag">-b</span> main</pre>
+    </li>
+    <li>Edite os arquivos (cores, tabelas, módulos)</li>
+    <li>Crie um novo repositório no GitHub:
+      <pre><span class="cmd">git</span> add .
+<span class="cmd">git</span> commit <span class="flag">-m</span> <span class="str">"feat: Novo ERP v1.0"</span>
+<span class="cmd">gh</span> repo create nome-do-novo-erp <span class="flag">--public --source=. --push</span></pre>
+    </li>
+    <li>Ative o GitHub Pages:
+      <pre><span class="cmd">gh</span> api repos/lobonessa13-code/nome-do-novo-erp/pages <span class="flag">-X POST</span> \
+  --input - &lt;&lt;'EOF'
+{"build_type":"legacy","source":{"branch":"main","path":"/"}}
+EOF</pre>
+    </li>
+    <li>Acesse: <code>lobonessa13-code.github.io/nome-do-novo-erp/</code></li>
+  </ol>
+
+  <!-- SEGURANÇA -->
+  <h2><span class="num">10</span> Segurança — O que saber</h2>
+
+  <table>
+    <thead>
+      <tr><th>Pergunta</th><th>Resposta</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Alguém pode ver meu código?</td>
+        <td><strong>Sim</strong> — o repositório é público. Isso é normal para sites. Os dados estão protegidos no Supabase, não no código.</td>
+      </tr>
+      <tr>
+        <td>Alguém pode editar meu código?</td>
+        <td><strong>Não</strong> — só quem tem acesso à sua conta GitHub pode editar.</td>
+      </tr>
+      <tr>
+        <td>A chave do Supabase está no código, é seguro?</td>
+        <td><strong>Sim</strong> — a publishable key só permite o que as políticas de segurança (RLS) permitem. Ela foi feita para ser pública.</td>
+      </tr>
+      <tr>
+        <td>Meus dados de clientes estão seguros?</td>
+        <td><strong>Sim</strong> — os dados estão no Supabase (banco de dados), não no GitHub. O GitHub só tem o "esqueleto" do sistema.</td>
+      </tr>
+      <tr>
+        <td>Posso tornar o repositório privado?</td>
+        <td><strong>Sim</strong> — mas o GitHub Pages grátis só funciona com repo público. Para repo privado + Pages, precisa do GitHub Pro (US$4/mês).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- GLOSSÁRIO RÁPIDO -->
+  <h2><span class="num">+</span> Cola Rápida — Comandos do dia a dia</h2>
+
+  <table>
+    <thead>
+      <tr><th>Quero...</th><th>Comando</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Ver o que mudou</td><td><code>git status</code></td></tr>
+      <tr><td>Adicionar mudanças</td><td><code>git add .</code></td></tr>
+      <tr><td>Salvar com descrição</td><td><code>git commit -m "descrição"</code></td></tr>
+      <tr><td>Enviar para o GitHub</td><td><code>git push</code></td></tr>
+      <tr><td>Baixar mudanças do GitHub</td><td><code>git pull</code></td></tr>
+      <tr><td>Ver histórico</td><td><code>git log --oneline</code></td></tr>
+      <tr><td>Desfazer um arquivo</td><td><code>git checkout -- arquivo.html</code></td></tr>
+      <tr><td>Entrar na pasta do projeto</td><td><code>cd ~/Documents/CRM-DIBREVA</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="box box-tip">
+    <strong>Não precisa decorar!</strong> Salve esta página como PDF e consulte quando precisar. Com o tempo, os 4 comandos principais (<code>add</code>, <code>commit</code>, <code>push</code>, <code>pull</code>) viram automáticos.
+  </div>
+
+  <div class="doc-footer">
+    <p>Guia GitHub para Iniciantes — DIBREVA · Fevereiro 2026</p>
+  </div>
+
+</body>
+</html>
