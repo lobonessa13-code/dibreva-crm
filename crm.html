@@ -52,6 +52,7 @@
       <button class="tab-btn active" onclick="CRM.switchTab('pipeline')">Pipeline</button>
       <button class="tab-btn" onclick="CRM.switchTab('tabela')">Tabela</button>
       <button class="tab-btn" onclick="CRM.switchTab('graficos')">Gráficos</button>
+      <button class="tab-btn" onclick="CRM.switchTab('relatorios')">Relatórios</button>
     </div>
 
     <!-- Tab: Pipeline Kanban -->
@@ -106,6 +107,74 @@
       </div>
     </div>
 
+    <!-- Tab: Relatórios Anuais -->
+    <div class="tab-content" id="tab-relatorios">
+      <div class="relatorio-header">
+        <h2>Relatório Anual de Orçamentos</h2>
+        <div class="relatorio-filtro">
+          <label>Ano:</label>
+          <select class="filter-select" id="relatorio-ano" onchange="CRM.renderRelatorios()"></select>
+        </div>
+      </div>
+
+      <!-- KPIs do Relatório -->
+      <div class="kpi-grid kpi-grid-4" id="relatorio-kpis">
+        <div class="kpi-card">
+          <div class="kpi-label">Orçamentos Enviados</div>
+          <div class="kpi-value info" id="rel-enviados">—</div>
+          <div class="kpi-sub" id="rel-enviados-valor"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Serviços Contratados</div>
+          <div class="kpi-value success" id="rel-contratados">—</div>
+          <div class="kpi-sub" id="rel-contratados-valor"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Perdidos</div>
+          <div class="kpi-value danger" id="rel-perdidos">—</div>
+          <div class="kpi-sub" id="rel-perdidos-valor"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Taxa de Conversão</div>
+          <div class="kpi-value" id="rel-taxa">—</div>
+          <div class="kpi-sub" id="rel-taxa-sub"></div>
+        </div>
+      </div>
+
+      <!-- Gráficos do Relatório -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Comparativo Anual (Quantidade)</h3>
+          <canvas id="chart-relatorio-qtd"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Comparativo Anual (Valor R$)</h3>
+          <canvas id="chart-relatorio-valor"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabela Detalhada -->
+      <div class="table-card" style="margin-top: 24px;">
+        <div class="panel-header">
+          <h3>Detalhamento por Tipo de Serviço</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de Serviço</th>
+              <th>Orçamentos</th>
+              <th>Contratados</th>
+              <th>Perdidos</th>
+              <th>Valor Orçado</th>
+              <th>Valor Contratado</th>
+              <th>Conversão</th>
+            </tr>
+          </thead>
+          <tbody id="relatorio-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 
   <!-- Modal: Lead -->
@@ -131,12 +200,12 @@
           <div class="form-group">
             <label>Tipo de Serviço <span class="required">*</span></label>
             <select class="form-control" id="lead-tipo-servico">
-              <option value="Restauração predial">Restauração predial</option>
               <option value="Pintura externa">Pintura externa</option>
-              <option value="Impermeabilização">Impermeabilização</option>
-              <option value="Tratamento estrutural">Tratamento estrutural</option>
-              <option value="Manutenção geral">Manutenção geral</option>
-              <option value="Informe externo">Informe externo</option>
+              <option value="Reforma externa">Reforma externa</option>
+              <option value="Reforma comercial">Reforma comercial</option>
+              <option value="Reforma residencial">Reforma residencial</option>
+              <option value="Calçada">Calçada</option>
+              <option value="Lavação">Lavação</option>
               <option value="Outro">Outro</option>
             </select>
           </div>
@@ -184,6 +253,26 @@
           <div class="form-group">
             <label>Probabilidade (%)</label>
             <input type="number" class="form-control" id="lead-probabilidade" min="0" max="100" value="30">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data de Entrada</label>
+            <input type="date" class="form-control" id="lead-data-entrada">
+          </div>
+          <div class="form-group">
+            <label>Data Envio Orçamento</label>
+            <input type="date" class="form-control" id="lead-data-envio-orcamento">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data Aprovação</label>
+            <input type="date" class="form-control" id="lead-data-aprovacao">
+          </div>
+          <div class="form-group">
+            <label>Data Perdido</label>
+            <input type="date" class="form-control" id="lead-data-perdido">
           </div>
         </div>
         <div class="form-group">
@@ -245,11 +334,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/supabase-config.js?v=5"></script>
-  <script src="js/db.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=5"></script>
-  <script src="js/crm.js?v=5"></script>
+  <script src="js/supabase-config.js?v=6"></script>
+  <script src="js/db.js?v=6"></script>
+  <script src="js/ui.js?v=6"></script>
+  <script src="js/nav.js?v=6"></script>
+  <script src="js/crm.js?v=6"></script>
   <script>
     document.getElementById('sidebar').innerHTML = renderSidebar('crm');
     CRM.init();

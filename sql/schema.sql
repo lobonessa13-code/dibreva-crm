@@ -20,6 +20,10 @@ CREATE TABLE leads (
   administradora TEXT,
   observacoes TEXT,
   probabilidade INTEGER DEFAULT 30 CHECK (probabilidade BETWEEN 0 AND 100),
+  data_entrada DATE DEFAULT CURRENT_DATE,
+  data_envio_orcamento DATE,
+  data_aprovacao DATE,
+  data_perdido DATE,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   deleted_at TIMESTAMPTZ

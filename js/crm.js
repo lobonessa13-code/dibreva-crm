@@ -9,6 +9,8 @@ const CRM = {
   sortAsc: false,
   chartStatus: null,
   chartCidades: null,
+  chartRelQtd: null,
+  chartRelValor: null,
 
   // Pipeline stages
   stages: [
@@ -27,6 +29,7 @@ const CRM = {
       this.renderPipeline();
       this.renderTable();
       this.renderCharts();
+      this.setupStatusAutoDate();
     } catch (err) {
       console.error('Erro ao inicializar CRM:', err);
       UI.error('Erro ao carregar dados. Verifique a conexão com Supabase.');
@@ -39,6 +42,26 @@ const CRM = {
       ascending: this.sortAsc
     });
     this.filtered = [...this.leads];
+  },
+
+  // --- Auto-preencher datas ao mudar status ---
+  setupStatusAutoDate() {
+    const statusEl = document.getElementById('lead-status');
+    if (!statusEl) return;
+    statusEl.addEventListener('change', () => {
+      const hoje = new Date().toISOString().split('T')[0];
+      const status = statusEl.value;
+      if (status === 'orcamento_enviado') {
+        const el = document.getElementById('lead-data-envio-orcamento');
+        if (el && !el.value) el.value = hoje;
+      } else if (status === 'aprovado') {
+        const el = document.getElementById('lead-data-aprovacao');
+        if (el && !el.value) el.value = hoje;
+      } else if (status === 'perdido') {
+        const el = document.getElementById('lead-data-perdido');
+        if (el && !el.value) el.value = hoje;
+      }
+    });
   },
 
   // --- KPIs ---
@@ -262,17 +285,19 @@ const CRM = {
   // --- Tabs ---
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', ['pipeline','tabela','graficos'][i] === tab);
+      btn.classList.toggle('active', ['pipeline','tabela','graficos','relatorios'][i] === tab);
     });
     document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
 
     if (tab === 'graficos') this.renderCharts();
     if (tab === 'tabela') this.renderTable();
+    if (tab === 'relatorios') this.renderRelatorios();
   },
 
   // --- CRUD ---
   openNew() {
+    const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('modal-lead-title').textContent = 'Novo Lead';
     document.getElementById('lead-id').value = '';
     document.getElementById('lead-condominio').value = '';
@@ -287,6 +312,10 @@ const CRM = {
     document.getElementById('lead-administradora').value = '';
     document.getElementById('lead-probabilidade').value = '30';
     document.getElementById('lead-observacoes').value = '';
+    document.getElementById('lead-data-entrada').value = hoje;
+    document.getElementById('lead-data-envio-orcamento').value = '';
+    document.getElementById('lead-data-aprovacao').value = '';
+    document.getElementById('lead-data-perdido').value = '';
     UI.openModal('modal-lead');
   },
 
@@ -307,6 +336,10 @@ const CRM = {
       document.getElementById('lead-administradora').value = lead.administradora || '';
       document.getElementById('lead-probabilidade').value = lead.probabilidade ?? 30;
       document.getElementById('lead-observacoes').value = lead.observacoes || '';
+      document.getElementById('lead-data-entrada').value = lead.data_entrada || '';
+      document.getElementById('lead-data-envio-orcamento').value = lead.data_envio_orcamento || '';
+      document.getElementById('lead-data-aprovacao').value = lead.data_aprovacao || '';
+      document.getElementById('lead-data-perdido').value = lead.data_perdido || '';
       UI.openModal('modal-lead');
     } catch (err) {
       UI.error('Erro ao carregar lead');
@@ -337,7 +370,11 @@ const CRM = {
       email: document.getElementById('lead-email').value.trim() || null,
       administradora: document.getElementById('lead-administradora').value.trim() || null,
       probabilidade: parseInt(document.getElementById('lead-probabilidade').value) || 30,
-      observacoes: document.getElementById('lead-observacoes').value.trim() || null
+      observacoes: document.getElementById('lead-observacoes').value.trim() || null,
+      data_entrada: document.getElementById('lead-data-entrada').value || null,
+      data_envio_orcamento: document.getElementById('lead-data-envio-orcamento').value || null,
+      data_aprovacao: document.getElementById('lead-data-aprovacao').value || null,
+      data_perdido: document.getElementById('lead-data-perdido').value || null
     };
 
     try {
@@ -406,6 +443,10 @@ const CRM = {
         await DB.update('obras', obraId, { cnpj });
       }
 
+      // Salvar data_aprovacao no lead
+      const hoje = new Date().toISOString().split('T')[0];
+      await DB.update('leads', leadId, { data_aprovacao: hoje });
+
       // Se tem parcelas > 1, substituir a receita única por parcelas
       if (parcelas > 1 && obraId) {
         // Buscar e remover a receita única criada pelo RPC
@@ -445,6 +486,215 @@ const CRM = {
     }
   },
 
+  // ===== RELATÓRIOS ANUAIS =====
+
+  getYearsFromLeads() {
+    const years = new Set();
+    this.leads.forEach(l => {
+      if (l.data_entrada) years.add(new Date(l.data_entrada).getFullYear());
+      if (l.data_envio_orcamento) years.add(new Date(l.data_envio_orcamento).getFullYear());
+      if (l.data_aprovacao) years.add(new Date(l.data_aprovacao).getFullYear());
+      if (l.data_perdido) years.add(new Date(l.data_perdido).getFullYear());
+      if (l.created_at) years.add(new Date(l.created_at).getFullYear());
+    });
+    if (years.size === 0) years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  },
+
+  renderRelatorios() {
+    const selectAno = document.getElementById('relatorio-ano');
+    if (!selectAno) return;
+
+    const years = this.getYearsFromLeads();
+
+    // Preencher select de anos (só se vazio ou mudou)
+    if (selectAno.options.length === 0 || selectAno.dataset.loaded !== 'true') {
+      selectAno.innerHTML = '<option value="todos">Todos os anos</option>' +
+        years.map(y => `<option value="${y}">${y}</option>`).join('');
+      selectAno.dataset.loaded = 'true';
+    }
+
+    const anoSelecionado = selectAno.value;
+
+    // Filtrar leads por ano
+    const filterByYear = (leads, dateField) => {
+      if (anoSelecionado === 'todos') return leads.filter(l => l[dateField]);
+      return leads.filter(l => {
+        if (!l[dateField]) return false;
+        return new Date(l[dateField]).getFullYear() === parseInt(anoSelecionado);
+      });
+    };
+
+    // Orçamentos enviados: leads que passaram pelo status orcamento_enviado (tem data_envio_orcamento)
+    const enviados = filterByYear(this.leads, 'data_envio_orcamento');
+    const contratados = filterByYear(this.leads, 'data_aprovacao');
+    const perdidos = filterByYear(this.leads, 'data_perdido');
+
+    const totalEnviados = enviados.length;
+    const totalContratados = contratados.length;
+    const totalPerdidos = perdidos.length;
+    const valorEnviados = enviados.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+    const valorContratados = contratados.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+    const valorPerdidos = perdidos.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+    const taxa = totalEnviados > 0 ? Math.round((totalContratados / totalEnviados) * 100) : 0;
+
+    // KPIs
+    document.getElementById('rel-enviados').textContent = totalEnviados;
+    document.getElementById('rel-enviados-valor').textContent = UI.moeda(valorEnviados);
+    document.getElementById('rel-contratados').textContent = totalContratados;
+    document.getElementById('rel-contratados-valor').textContent = UI.moeda(valorContratados);
+    document.getElementById('rel-perdidos').textContent = totalPerdidos;
+    document.getElementById('rel-perdidos-valor').textContent = UI.moeda(valorPerdidos);
+    document.getElementById('rel-taxa').textContent = taxa + '%';
+    document.getElementById('rel-taxa-sub').textContent = `${totalContratados} de ${totalEnviados} orçamentos`;
+
+    // Gráficos comparativos por ano
+    this.renderRelatorioCharts(years);
+
+    // Tabela detalhada por tipo de serviço
+    this.renderRelatorioTable(enviados, contratados, perdidos);
+  },
+
+  renderRelatorioCharts(years) {
+    const displayYears = years.slice().reverse();
+
+    const dataByYear = displayYears.map(year => {
+      const enviadosAno = this.leads.filter(l => l.data_envio_orcamento && new Date(l.data_envio_orcamento).getFullYear() === year);
+      const contratadosAno = this.leads.filter(l => l.data_aprovacao && new Date(l.data_aprovacao).getFullYear() === year);
+      const perdidosAno = this.leads.filter(l => l.data_perdido && new Date(l.data_perdido).getFullYear() === year);
+      return {
+        year,
+        enviadosQtd: enviadosAno.length,
+        contratadosQtd: contratadosAno.length,
+        perdidosQtd: perdidosAno.length,
+        enviadosVal: enviadosAno.reduce((s, l) => s + (l.valor_estimado || 0), 0),
+        contratadosVal: contratadosAno.reduce((s, l) => s + (l.valor_estimado || 0), 0),
+        perdidosVal: perdidosAno.reduce((s, l) => s + (l.valor_estimado || 0), 0)
+      };
+    });
+
+    // Chart Quantidade
+    const ctxQtd = document.getElementById('chart-relatorio-qtd');
+    if (ctxQtd) {
+      if (this.chartRelQtd) this.chartRelQtd.destroy();
+      this.chartRelQtd = new Chart(ctxQtd, {
+        type: 'bar',
+        data: {
+          labels: displayYears.map(String),
+          datasets: [
+            { label: 'Orçamentos Enviados', data: dataByYear.map(d => d.enviadosQtd), backgroundColor: '#D37E53', borderRadius: 4 },
+            { label: 'Contratados', data: dataByYear.map(d => d.contratadosQtd), backgroundColor: '#2D8E5E', borderRadius: 4 },
+            { label: 'Perdidos', data: dataByYear.map(d => d.perdidosQtd), backgroundColor: '#C43B3B', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    }
+
+    // Chart Valor
+    const ctxVal = document.getElementById('chart-relatorio-valor');
+    if (ctxVal) {
+      if (this.chartRelValor) this.chartRelValor.destroy();
+      this.chartRelValor = new Chart(ctxVal, {
+        type: 'bar',
+        data: {
+          labels: displayYears.map(String),
+          datasets: [
+            { label: 'Valor Orçado', data: dataByYear.map(d => d.enviadosVal), backgroundColor: '#D37E53', borderRadius: 4 },
+            { label: 'Valor Contratado', data: dataByYear.map(d => d.contratadosVal), backgroundColor: '#2D8E5E', borderRadius: 4 },
+            { label: 'Valor Perdido', data: dataByYear.map(d => d.perdidosVal), backgroundColor: '#C43B3B', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } },
+            tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + UI.moeda(ctx.raw) } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: (v) => UI.moeda(v) } }
+          }
+        }
+      });
+    }
+  },
+
+  renderRelatorioTable(enviados, contratados, perdidos) {
+    const tbody = document.getElementById('relatorio-table-body');
+    if (!tbody) return;
+
+    // Agrupar por tipo_servico
+    const servicos = new Set();
+    [...enviados, ...contratados, ...perdidos].forEach(l => servicos.add(l.tipo_servico || 'Outro'));
+
+    const rows = Array.from(servicos).sort().map(servico => {
+      const sEnv = enviados.filter(l => (l.tipo_servico || 'Outro') === servico);
+      const sCon = contratados.filter(l => (l.tipo_servico || 'Outro') === servico);
+      const sPer = perdidos.filter(l => (l.tipo_servico || 'Outro') === servico);
+      const valEnv = sEnv.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+      const valCon = sCon.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+      const taxa = sEnv.length > 0 ? Math.round((sCon.length / sEnv.length) * 100) : 0;
+
+      return `
+        <tr>
+          <td><strong>${servico}</strong></td>
+          <td>${sEnv.length}</td>
+          <td>${sCon.length}</td>
+          <td>${sPer.length}</td>
+          <td>${UI.moeda(valEnv)}</td>
+          <td>${UI.moeda(valCon)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;">
+                <div class="progress-fill ${taxa >= 50 ? 'green' : taxa >= 25 ? 'orange' : 'red'}" style="width:${taxa}%"></div>
+              </div>
+              <span>${taxa}%</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    // Totais
+    const totalEnv = enviados.length;
+    const totalCon = contratados.length;
+    const totalPer = perdidos.length;
+    const totalValEnv = enviados.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+    const totalValCon = contratados.reduce((s, l) => s + (l.valor_estimado || 0), 0);
+    const totalTaxa = totalEnv > 0 ? Math.round((totalCon / totalEnv) * 100) : 0;
+
+    rows.push(`
+      <tr style="font-weight:700;background:var(--cinza-bg);">
+        <td>TOTAL</td>
+        <td>${totalEnv}</td>
+        <td>${totalCon}</td>
+        <td>${totalPer}</td>
+        <td>${UI.moeda(totalValEnv)}</td>
+        <td>${UI.moeda(totalValCon)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="progress-bar" style="width:80px;">
+              <div class="progress-fill ${totalTaxa >= 50 ? 'green' : totalTaxa >= 25 ? 'orange' : 'red'}" style="width:${totalTaxa}%"></div>
+            </div>
+            <span>${totalTaxa}%</span>
+          </div>
+        </td>
+      </tr>
+    `);
+
+    tbody.innerHTML = rows.length <= 1
+      ? '<tr><td colspan="7" class="empty-state"><p>Nenhum dado de orçamento encontrado. Preencha as datas nos leads.</p></td></tr>'
+      : rows.join('');
+  },
+
   // --- Export CSV ---
   exportCSV() {
     UI.exportCSV(this.filtered.length ? this.filtered : this.leads, 'crm-leads', [
@@ -458,6 +708,10 @@ const CRM = {
       { label: 'Probabilidade', accessor: r => r.probabilidade },
       { label: 'Próxima Ação', accessor: r => r.proxima_acao },
       { label: 'Administradora', accessor: r => r.administradora },
+      { label: 'Data Entrada', accessor: r => r.data_entrada || '' },
+      { label: 'Data Envio Orçamento', accessor: r => r.data_envio_orcamento || '' },
+      { label: 'Data Aprovação', accessor: r => r.data_aprovacao || '' },
+      { label: 'Data Perdido', accessor: r => r.data_perdido || '' },
       { label: 'Observações', accessor: r => r.observacoes }
     ]);
   }
