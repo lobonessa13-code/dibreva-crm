@@ -442,6 +442,11 @@
     .stage-proposta .count { background: rgba(211,126,83,0.1); color: var(--laranja2); }
     .stage-proposta .pipeline-body { border-top-color: var(--laranja2); }
 
+    .stage-followup .pipeline-header { background: rgba(127,90,180,0.05); }
+    .stage-followup .pipeline-header h3 { color: #7F5AB4; }
+    .stage-followup .count { background: rgba(127,90,180,0.1); color: #7F5AB4; }
+    .stage-followup .pipeline-body { border-top-color: #7F5AB4; }
+
     .stage-aguardando .pipeline-header { background: rgba(229,161,0,0.05); }
     .stage-aguardando .pipeline-header h3 { color: var(--warning); }
     .stage-aguardando .count { background: rgba(229,161,0,0.1); color: var(--warning); }
@@ -612,6 +617,7 @@
     .status-contato { background: rgba(58,123,191,0.1); color: var(--info); }
     .status-informe { background: rgba(29,42,58,0.08); color: var(--azul-light); }
     .status-proposta { background: rgba(211,126,83,0.12); color: var(--laranja2); }
+    .status-followup { background: rgba(127,90,180,0.12); color: #7F5AB4; }
     .status-aguardando { background: rgba(229,161,0,0.1); color: #B88200; }
     .status-vistoria { background: rgba(45,142,94,0.1); color: var(--success); }
     .status-negacao { background: rgba(196,59,59,0.1); color: var(--danger); }
@@ -921,6 +927,7 @@
           <option value="Contato inicial">Contato inicial</option>
           <option value="Informe externo">Informe externo</option>
           <option value="Envio da proposta">Envio da proposta</option>
+          <option value="Follow-up pós-orçamento">Follow-up pós-orçamento</option>
           <option value="Aguardando Retorno">Aguardando Retorno</option>
           <option value="Vistoria agendada">Vistoria agendada</option>
           <option value="Negacao externa">Negacao externa</option>
@@ -991,6 +998,7 @@
           <option value="Contato inicial">Contato inicial</option>
           <option value="Informe externo">Informe externo</option>
           <option value="Envio da proposta">Envio da proposta</option>
+          <option value="Follow-up pós-orçamento">Follow-up pós-orçamento</option>
           <option value="Aguardando Retorno">Aguardando Retorno</option>
           <option value="Vistoria agendada">Vistoria agendada</option>
         </select>
@@ -1051,15 +1059,17 @@ const statusConfig = {
   "Contato inicial":    { class: "status-contato",    stageClass: "stage-contato",    order: 1 },
   "Informe externo":    { class: "status-informe",    stageClass: "stage-informe",    order: 2 },
   "Envio da proposta":  { class: "status-proposta",   stageClass: "stage-proposta",   order: 3 },
-  "Aguardando Retorno": { class: "status-aguardando", stageClass: "stage-aguardando", order: 4 },
-  "Vistoria agendada":  { class: "status-vistoria",   stageClass: "stage-vistoria",   order: 5 },
-  "Negacao externa":    { class: "status-negacao",     stageClass: "stage-negacao",    order: 6 },
+  "Follow-up pós-orçamento": { class: "status-followup", stageClass: "stage-followup", order: 4 },
+  "Aguardando Retorno": { class: "status-aguardando", stageClass: "stage-aguardando", order: 5 },
+  "Vistoria agendada":  { class: "status-vistoria",   stageClass: "stage-vistoria",   order: 6 },
+  "Negacao externa":    { class: "status-negacao",     stageClass: "stage-negacao",    order: 7 },
 };
 
 const statusColors = {
   "Contato inicial":    "#3A7BBF",
   "Informe externo":    "#2A3D52",
   "Envio da proposta":  "#D37E53",
+  "Follow-up pós-orçamento": "#7F5AB4",
   "Aguardando Retorno": "#E5A100",
   "Vistoria agendada":  "#2D8E5E",
   "Negacao externa":    "#C43B3B",
