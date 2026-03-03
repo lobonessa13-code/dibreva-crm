@@ -79,7 +79,7 @@ const CRM = {
       document.getElementById('kpi-previsao').textContent = UI.moeda(
         ativos.reduce((s, l) => s + (l.valor_estimado * (l.probabilidade || 30) / 100), 0)
       );
-      document.getElementById('kpi-negociacao').textContent = this.leads.filter(l => l.status === 'negociacao').length;
+      document.getElementById('kpi-negociacao').textContent = this.leads.filter(l => l.status === 'followup_orcamento').length;
       const mesAtual = new Date().getMonth();
       document.getElementById('kpi-aprovados').textContent = this.leads.filter(l =>
         l.status === 'aprovado' && new Date(l.updated_at).getMonth() === mesAtual
@@ -162,7 +162,7 @@ const CRM = {
               <button class="btn btn-sm btn-secondary btn-icon" title="Editar" onclick="CRM.openEdit('${l.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              ${['negociacao','aprovado'].includes(l.status) ? `
+              ${['followup_orcamento','aprovado'].includes(l.status) ? `
               <button class="btn btn-sm btn-success btn-icon" title="Converter em Obra" onclick="CRM.openConverter('${l.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
               </button>` : ''}

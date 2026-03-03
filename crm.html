@@ -43,7 +43,7 @@
     <div class="kpi-grid" id="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Leads Ativos</div><div class="kpi-value" id="kpi-leads">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Previsão Faturamento</div><div class="kpi-value" id="kpi-previsao">—</div></div>
-      <div class="kpi-card"><div class="kpi-label">Em Negociação</div><div class="kpi-value warning" id="kpi-negociacao">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Follow-up Pendente</div><div class="kpi-value warning" id="kpi-negociacao">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Aprovados no Mês</div><div class="kpi-value success" id="kpi-aprovados">—</div></div>
     </div>
 
@@ -221,7 +221,7 @@
               <option value="lead">Lead</option>
               <option value="visita_tecnica">Visita Técnica</option>
               <option value="orcamento_enviado">Orçamento Enviado</option>
-              <option value="negociacao">Negociação</option>
+              <option value="followup_orcamento">Follow-up Pós-Orçamento</option>
               <option value="aprovado">Aprovado</option>
               <option value="perdido">Perdido</option>
             </select>
@@ -334,11 +334,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/supabase-config.js?v=7"></script>
-  <script src="js/db.js?v=7"></script>
-  <script src="js/ui.js?v=7"></script>
-  <script src="js/nav.js?v=7"></script>
-  <script src="js/crm.js?v=7"></script>
+  <script src="js/supabase-config.js?v=8"></script>
+  <script src="js/db.js?v=8"></script>
+  <script src="js/ui.js?v=8"></script>
+  <script src="js/nav.js?v=8"></script>
+  <script src="js/crm.js?v=8"></script>
   <script>
     document.getElementById('sidebar').innerHTML = renderSidebar('crm');
     CRM.init();
