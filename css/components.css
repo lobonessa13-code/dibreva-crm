@@ -107,6 +107,10 @@
 .stage-orcamento_enviado .pipeline-header h3 { color: var(--laranja2); }
 .stage-orcamento_enviado .pipeline-body { border-top-color: var(--laranja2); }
 
+.stage-followup_orcamento .pipeline-header { background: rgba(127,90,180,0.05); }
+.stage-followup_orcamento .pipeline-header h3 { color: #7F5AB4; }
+.stage-followup_orcamento .pipeline-body { border-top-color: #7F5AB4; }
+
 .stage-negociacao .pipeline-header { background: rgba(229,161,0,0.05); }
 .stage-negociacao .pipeline-header h3 { color: var(--warning); }
 .stage-negociacao .pipeline-body { border-top-color: var(--warning); }
@@ -273,6 +277,7 @@
 .badge-lead { background: var(--info-bg); color: var(--info); }
 .badge-visita_tecnica { background: rgba(29,42,58,0.08); color: var(--azul-light); }
 .badge-orcamento_enviado { background: rgba(211,126,83,0.12); color: var(--laranja2); }
+.badge-followup_orcamento { background: rgba(127,90,180,0.12); color: #7F5AB4; }
 .badge-negociacao { background: var(--warning-bg); color: var(--warning); }
 .badge-aprovado { background: var(--success-bg); color: var(--success); }
 .badge-perdido { background: var(--danger-bg); color: var(--danger); }

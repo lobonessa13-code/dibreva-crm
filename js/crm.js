@@ -17,6 +17,7 @@ const CRM = {
     { id: 'lead', label: 'Lead' },
     { id: 'visita_tecnica', label: 'Visita Técnica' },
     { id: 'orcamento_enviado', label: 'Orçamento Enviado' },
+    { id: 'followup_orcamento', label: 'Follow-up Pós-Orçamento' },
     { id: 'negociacao', label: 'Negociação' },
     { id: 'aprovado', label: 'Aprovado' },
     { id: 'perdido', label: 'Perdido' }
@@ -215,6 +216,7 @@ const CRM = {
       lead: '#3A7BBF',
       visita_tecnica: '#2A3D52',
       orcamento_enviado: '#D37E53',
+      followup_orcamento: '#7F5AB4',
       negociacao: '#E5A100',
       aprovado: '#2D8E5E',
       perdido: '#C43B3B'
