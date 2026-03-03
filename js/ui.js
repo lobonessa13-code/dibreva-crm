@@ -69,7 +69,6 @@ const UI = {
       visita_tecnica: 'Visita Técnica',
       orcamento_enviado: 'Orçamento Enviado',
       followup_orcamento: 'Follow-up Pós-Orçamento',
-      negociacao: 'Negociação',
       aprovado: 'Aprovado',
       perdido: 'Perdido',
       planejamento: 'Planejamento',
