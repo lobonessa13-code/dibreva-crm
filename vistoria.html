@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA - Vistoria Predial</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    /* Tabs de sistemas (scroll horizontal no mobile) */
+    #sistema-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    #sistema-tabs::-webkit-scrollbar { display: none; }
+    #sistema-tabs .tab-btn { white-space: nowrap; flex-shrink: 0; }
+
+    /* Loading spinner no processando */
+    .spinner-lg {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(212,98,80,0.2);
+      border-top-color: var(--laranja);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Agente step list */
+    .agent-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--cinza-bg);
+      font-size: 13px; color: var(--cinza);
+    }
+    .agent-step:last-child { border-bottom: none; }
+    .agent-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--cinza-bg); flex-shrink: 0;
+    }
+    .agent-dot.active { background: var(--laranja); box-shadow: 0 0 0 3px rgba(212,98,80,.2); }
+    .agent-dot.done   { background: var(--success); }
+
+    /* Print */
+    @media print {
+      .sidebar, .mobile-toggle, .mobile-overlay,
+      .page-header-actions, #resultado-tabs,
+      button { display: none !important; }
+      .main-content { margin: 0 !important; padding: 16px !important; }
+      .panel { box-shadow: none !important; border: 1px solid #ddd !important; page-break-inside: avoid; }
+    }
+
+    /* Foto preview */
+    #foto-preview {
+      width: 100%; max-height: 200px; object-fit: cover;
+      border-radius: var(--radius-sm); margin-top: 10px; display: none;
+    }
+
+    /* Form grid */
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) {
+      .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="mobile-overlay"></div>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>Vistoria Predial</h1>
+      <div class="page-header-actions">
+        <button id="btn-voltar" class="btn btn-secondary" style="display:none;" onclick="VISTORIA.voltar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Voltar
+        </button>
+        <button id="btn-nova-vistoria" class="btn btn-primary" onclick="VISTORIA.novaVistoria()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Vistoria
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- VIEW: LISTA                                             -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="vistoria-view" id="view-list">
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value" id="kpi-v-total">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Concluídas</div>
+          <div class="kpi-value success" id="kpi-v-concluidas">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Em Andamento</div>
+          <div class="kpi-value warning" id="kpi-v-andamento">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Este mês</div>
+          <div class="kpi-value" id="kpi-v-mes">—</div>
+        </div>
+      </div>
+
+      <div id="lista-vistorias"></div>
+
+    </div><!-- /view-list -->
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- VIEW: FORMULÁRIO (Dados do imóvel)                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="vistoria-view" id="view-form" style="display:none;">
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Identificação do Imóvel</h3>
+          <span style="font-size:12px;color:var(--cinza);">Passo 1 de 2</span>
+        </div>
+        <div class="panel-body">
+          <form id="form-vistoria" onsubmit="return false;">
+
+            <div class="form-group">
+              <label class="form-label">Nome do Condomínio / Imóvel *</label>
+              <input type="text" id="form-imovel-nome" class="form-input"
+                     placeholder="Ex: Edifício Residencial Monte Carlo">
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Tipo de Edificação *</label>
+                <select id="form-imovel-tipo" class="form-input">
+                  <option value="residencial">Residencial</option>
+                  <option value="comercial">Comercial</option>
+                  <option value="misto">Misto</option>
+                  <option value="industrial">Industrial</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Data da Vistoria</label>
+                <input type="date" id="form-data-vistoria" class="form-input">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Endereço</label>
+              <input type="text" id="form-endereco" class="form-input"
+                     placeholder="Rua, número, bairro">
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label">Cidade</label>
+                <input type="text" id="form-cidade" class="form-input" value="Criciúma">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Idade aprox. (anos)</label>
+                <input type="number" id="form-idade" class="form-input" min="0" max="200"
+                       placeholder="Ex: 25">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nº de Pavimentos</label>
+                <input type="number" id="form-pavimentos" class="form-input" min="1"
+                       placeholder="Ex: 10">
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Área construída (m²)</label>
+                <input type="number" id="form-area" class="form-input" min="0" step="0.01"
+                       placeholder="Ex: 1200">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sistemas construtivos</label>
+                <input type="text" id="form-sistemas" class="form-input"
+                       placeholder="Ex: concreto armado, alvenaria cerâmica">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Observações gerais</label>
+              <textarea id="form-observacoes" class="form-input" rows="2"
+                        placeholder="Informações relevantes sobre o imóvel..." style="resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+              <button type="button" id="btn-salvar-form" class="btn btn-primary"
+                      onclick="VISTORIA.salvarForm()">
+                Continuar →
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div><!-- /view-form -->
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- VIEW: CHECKLIST DE PATOLOGIAS                           -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="vistoria-view" id="view-checklist" style="display:none;">
+
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <h3>Checklist por Sistema</h3>
+          <span style="font-size:12px;color:var(--cinza);">Passo 2 de 2</span>
+        </div>
+        <div class="panel-body">
+
+          <!-- Tabs de sistemas -->
+          <div id="sistema-tabs" class="tabs" style="margin-bottom:20px;"></div>
+
+          <!-- Conteúdo do sistema ativo -->
+          <div id="sistema-content"></div>
+
+        </div>
+      </div>
+
+      <!-- Rodapé: resumo + botão gerar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:16px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);">
+        <div id="patologias-resumo" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
+        <button id="btn-gerar-laudo" class="btn btn-primary" onclick="VISTORIA.gerarLaudo()" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          </svg>
+          Gerar Laudo com IA
+        </button>
+      </div>
+
+    </div><!-- /view-checklist -->
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- VIEW: PROCESSANDO                                        -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="vistoria-view" id="view-processando" style="display:none;">
+      <div style="max-width:480px;margin:60px auto;text-align:center;">
+        <div class="spinner-lg"></div>
+        <h2 style="font-size:20px;color:var(--azul);margin-bottom:8px;">Gerando laudo técnico...</h2>
+        <p id="processando-step" style="font-size:14px;color:var(--cinza);margin-bottom:32px;">
+          Agente 01 — Vistoria e Diagnóstico
+        </p>
+        <div class="panel" style="text-align:left;">
+          <div class="panel-body">
+            <div class="agent-step">
+              <div class="agent-dot active"></div>Agente 01 — Vistoria e Diagnóstico
+            </div>
+            <div class="agent-step">
+              <div class="agent-dot"></div>Agente 02 — Classificação dos Serviços
+            </div>
+            <div class="agent-step">
+              <div class="agent-dot"></div>Agente 03 — Descrição Técnica
+            </div>
+            <div class="agent-step">
+              <div class="agent-dot"></div>Agente 04 — Plano de Execução
+            </div>
+            <div class="agent-step">
+              <div class="agent-dot"></div>Agente 05 — Orçamento Tabelado
+            </div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--cinza-light);margin-top:16px;">Aguarde 30–60 segundos</p>
+      </div>
+    </div><!-- /view-processando -->
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- VIEW: RESULTADO                                          -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="vistoria-view" id="view-resultado" style="display:none;">
+
+      <div class="tabs" id="resultado-tabs" style="margin-bottom:20px;overflow-x:auto;scrollbar-width:none;">
+        <button class="tab-btn active" data-tab="diagnostico"
+                onclick="VISTORIA.switchResultTab('diagnostico')">Diagnóstico</button>
+        <button class="tab-btn" data-tab="classificacao"
+                onclick="VISTORIA.switchResultTab('classificacao')">Classificação</button>
+        <button class="tab-btn" data-tab="plano"
+                onclick="VISTORIA.switchResultTab('plano')">Plano</button>
+        <button class="tab-btn" data-tab="orcamento"
+                onclick="VISTORIA.switchResultTab('orcamento')">Orçamento</button>
+        <button class="tab-btn" data-tab="resumo"
+                onclick="VISTORIA.switchResultTab('resumo')">Resumo</button>
+      </div>
+
+      <div id="resultado-content"></div>
+
+    </div><!-- /view-resultado -->
+
+  </main><!-- /main-content -->
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- MODAL: Nova Patologia                                        -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-patologia">
+    <div class="modal" style="max-width:520px;width:95%;">
+      <div class="modal-header">
+        <h3>Patologia — <span id="modal-sistema-label" style="color:var(--laranja);"></span></h3>
+        <button class="modal-close" onclick="UI.closeModal('modal-patologia')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+        <form id="form-patologia" onsubmit="return false;">
+          <input type="hidden" id="pat-sistema">
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Tipo de Manifestação *</label>
+              <input type="text" id="pat-tipo" class="form-input" list="lista-tipos"
+                     placeholder="Ex: Fissura, Infiltração...">
+              <datalist id="lista-tipos">
+                <option value="Fissura">
+                <option value="Trinca">
+                <option value="Eflorescência">
+                <option value="Infiltração">
+                <option value="Manchas de umidade">
+                <option value="Corrosão de armadura">
+                <option value="Descolamento de revestimento">
+                <option value="Bolhas na pintura">
+                <option value="Recalque">
+                <option value="Cobertura danificada">
+                <option value="Tubulação com vazamento">
+                <option value="Oxidação de esquadria">
+                <option value="Vidro trincado / quebrado">
+                <option value="Sobrecarga">
+                <option value="Deterioração de junta de dilatação">
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Severidade *</label>
+              <select id="pat-severidade" class="form-input">
+                <option value="leve">Leve</option>
+                <option value="moderado">Moderado</option>
+                <option value="grave">Grave</option>
+                <option value="critico">Crítico</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Localização *</label>
+            <input type="text" id="pat-localizacao" class="form-input"
+                   placeholder="Ex: Fachada Norte, Laje cobertura, Pavimento 3">
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Dimensão / Extensão</label>
+              <input type="text" id="pat-dimensao" class="form-input"
+                     placeholder="Ex: 15 ml, 8 m², 3 un">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Causa Provável</label>
+              <input type="text" id="pat-causa" class="form-input" list="lista-causas"
+                     placeholder="Ex: Falha de impermeab.">
+              <datalist id="lista-causas">
+                <option value="Umidade ascendente">
+                <option value="Falha de impermeabilização">
+                <option value="Movimentação térmica">
+                <option value="Movimentação estrutural">
+                <option value="Ausência de manutenção">
+                <option value="Recalque diferencial">
+                <option value="Corrosão das armaduras">
+                <option value="Carbonatação do concreto">
+                <option value="Infiltração pela cobertura">
+                <option value="Entupimento de calha">
+                <option value="Vibração excessiva">
+              </datalist>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observações</label>
+            <textarea id="pat-obs" class="form-input" rows="2"
+                      placeholder="Informações adicionais..." style="resize:vertical;"></textarea>
+          </div>
+
+          <!-- Foto -->
+          <div class="form-group">
+            <label class="form-label">Foto</label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;border:2px dashed var(--cinza-bg);border-radius:var(--radius-sm);transition:border-color .2s;"
+                   onmouseover="this.style.borderColor='var(--laranja)'" onmouseout="this.style.borderColor='var(--cinza-bg)'">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cinza)" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span style="font-size:13px;color:var(--cinza);">Tirar foto / escolher arquivo</span>
+              <input type="file" accept="image/*" capture="environment"
+                     onchange="VISTORIA.fotoChanged(this)" style="display:none;">
+            </label>
+            <img id="foto-preview" src="" alt="Prévia da foto">
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-patologia')">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-patologia"
+                onclick="VISTORIA.salvarPatologia()">Salvar Patologia</button>
+      </div>
+    </div>
+  </div><!-- /modal-patologia -->
+
+  <script src="js/supabase-config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
+  <script src="js/db.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/nav.js?v=6"></script>
+  <script src="js/vistoria.js?v=1"></script>
+  <script>
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      document.getElementById('sidebar').innerHTML = renderSidebar('vistoria');
+      VISTORIA.init();
+    });
+  </script>
+</body>
+</html>

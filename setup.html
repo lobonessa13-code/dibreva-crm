@@ -24,6 +24,28 @@
       <h1>Configurações</h1>
     </div>
 
+    <!-- Integração com IA -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <h3>Integração com IA (Claude)</h3>
+        <span class="badge" id="ia-badge" style="display:none;">—</span>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--cinza); margin-bottom: 16px; font-size: 14px;">
+          Chave necessária para gerar laudos técnicos no módulo de Vistoria.
+          Criada em <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--laranja);">console.anthropic.com</a>.
+          Armazenada apenas neste navegador (localStorage).
+        </p>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="password" id="input-claude-key" class="form-input" style="max-width: 380px; flex: 1;"
+                 placeholder="sk-ant-..." autocomplete="off">
+          <button class="btn btn-primary" onclick="salvarChaveClaude()">Salvar Chave</button>
+          <button class="btn btn-secondary" onclick="testarChaveClaude()">Testar</button>
+        </div>
+        <div id="ia-result" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
     <!-- Conexão -->
     <div class="panel" style="margin-bottom: 24px;">
       <div class="panel-header">
@@ -87,12 +109,74 @@
 
   </main>
 
-  <script src="js/supabase-config.js?v=5"></script>
+  <script src="js/supabase-config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
   <script src="js/db.js?v=5"></script>
   <script src="js/ui.js?v=5"></script>
   <script src="js/nav.js?v=5"></script>
   <script>
-    document.getElementById('sidebar').innerHTML = renderSidebar('setup');
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      document.getElementById('sidebar').innerHTML = renderSidebar('setup');
+      // Preencher chave salva
+      const saved = localStorage.getItem('dibreva_claude_key');
+      if (saved) {
+        document.getElementById('input-claude-key').value = saved;
+        const badge = document.getElementById('ia-badge');
+        badge.textContent = 'Configurada';
+        badge.className = 'badge badge-aprovado';
+        badge.style.display = '';
+      }
+    });
+
+    function salvarChaveClaude() {
+      const key = document.getElementById('input-claude-key').value.trim();
+      if (!key.startsWith('sk-ant-')) {
+        UI.error('Chave inválida. Deve começar com sk-ant-');
+        return;
+      }
+      localStorage.setItem('dibreva_claude_key', key);
+      const badge = document.getElementById('ia-badge');
+      badge.textContent = 'Configurada';
+      badge.className = 'badge badge-aprovado';
+      badge.style.display = '';
+      UI.success('Chave salva com sucesso!');
+    }
+
+    async function testarChaveClaude() {
+      const key = document.getElementById('input-claude-key').value.trim();
+      if (!key) { UI.error('Insira a chave antes de testar.'); return; }
+      const result = document.getElementById('ia-result');
+      result.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div> Testando...';
+      try {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 10,
+            messages: [{ role: 'user', content: 'ok' }],
+          }),
+        });
+        if (resp.ok) {
+          result.innerHTML = '<span style="color:var(--success);font-weight:600;">✓ Chave válida e funcionando!</span>';
+          const badge = document.getElementById('ia-badge');
+          badge.textContent = 'Ativa';
+          badge.className = 'badge badge-aprovado';
+          badge.style.display = '';
+        } else {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error?.message || 'Chave inválida');
+        }
+      } catch (err) {
+        result.innerHTML = `<span style="color:var(--danger);font-weight:600;">Erro: ${err.message}</span>`;
+      }
+    }
 
     // Testar conexão
     async function testConnection() {

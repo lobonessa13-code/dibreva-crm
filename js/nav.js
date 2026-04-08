@@ -70,6 +70,14 @@ function renderSidebar(activePage) {
         </svg>
         Obras
       </a></li>
+      <li><a href="vistoria.html" ${activePage === 'vistoria' ? 'class="active"' : ''}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+        Vistoria
+      </a></li>
       <li><a href="financeiro.html" ${activePage === 'financeiro' ? 'class="active"' : ''}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
@@ -89,6 +97,28 @@ function renderSidebar(activePage) {
     </ul>
 
     <div class="sidebar-footer">
+      <button onclick="Auth.logout()" style="
+        width: 100%;
+        padding: 10px 16px;
+        background: rgba(212,98,80,0.12);
+        color: var(--laranja);
+        border: none;
+        border-radius: 6px;
+        font-family: var(--font-heading);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='rgba(212,98,80,0.2)'" onmouseout="this.style.background='rgba(212,98,80,0.12)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sair
+      </button>
       <small>DIBREVA Mini ERP v1.0</small>
     </div>
   `;
