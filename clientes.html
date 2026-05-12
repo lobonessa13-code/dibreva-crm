@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA - Clientes</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay"></div>
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>Clientes</h1>
+      <div class="page-header-actions">
+        <button class="btn btn-primary" onclick="CLI.openNew()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Cliente
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Total de Clientes</div><div class="kpi-value" id="kpi-total">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Condomínios</div><div class="kpi-value" id="kpi-condominios">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Empresas</div><div class="kpi-value" id="kpi-empresas">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Com Obras Ativas</div><div class="kpi-value success" id="kpi-com-obras">—</div></div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-card">
+      <div class="table-toolbar">
+        <input type="text" class="search-input" id="search-clientes" placeholder="Buscar por nome, CNPJ/CPF ou condomínio..." oninput="CLI.renderTable()">
+        <select class="form-control" id="filter-tipo" onchange="CLI.renderTable()" style="max-width: 180px;">
+          <option value="todos">Todos os tipos</option>
+          <option value="condominio">Condomínio</option>
+          <option value="empresa">Empresa</option>
+          <option value="pessoa_fisica">Pessoa Física</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome / Condomínio</th>
+            <th>CPF/CNPJ</th>
+            <th>Cidade/UF</th>
+            <th>Responsável</th>
+            <th>Contato</th>
+            <th>Notificações</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="clientes-table-body"></tbody>
+      </table>
+      <div class="table-pagination" id="clientes-pagination"></div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Cliente -->
+  <div class="modal-overlay" id="modal-cliente">
+    <div class="modal" style="max-width: 780px;">
+      <div class="modal-header">
+        <h2 id="modal-cliente-title">Novo Cliente</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-cliente')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cliente-id">
+
+        <!-- Tipo + Nome -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo <span class="required">*</span></label>
+            <select class="form-control" id="cliente-tipo" onchange="CLI.toggleTipo()">
+              <option value="condominio">Condomínio</option>
+              <option value="empresa">Empresa</option>
+              <option value="pessoa_fisica">Pessoa Física</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nome / Razão Social <span class="required">*</span></label>
+            <input type="text" class="form-control" id="cliente-nome" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label id="label-cpf-cnpj">CNPJ</label>
+            <input type="text" class="form-control" id="cliente-cpf-cnpj" oninput="CLI.mascaraDoc(this)">
+          </div>
+          <div class="form-group" id="grp-ie">
+            <label>Inscrição Estadual</label>
+            <input type="text" class="form-control" id="cliente-ie">
+          </div>
+        </div>
+
+        <!-- Condomínio -->
+        <div id="grp-condominio">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome do Condomínio</label>
+              <input type="text" class="form-control" id="cliente-condominio" placeholder="Ex: Residencial Trier">
+            </div>
+            <div class="form-group">
+              <label>Administradora</label>
+              <input type="text" class="form-control" id="cliente-administradora">
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-family: var(--font-heading); font-size: 13px; margin: 16px 0 8px; color: var(--cinza);">Endereço</h3>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label>Logradouro</label>
+            <input type="text" class="form-control" id="cliente-logradouro" placeholder="Rua, Avenida...">
+          </div>
+          <div class="form-group" style="max-width: 100px;">
+            <label>Número</label>
+            <input type="text" class="form-control" id="cliente-numero">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Complemento</label>
+            <input type="text" class="form-control" id="cliente-complemento" placeholder="Sala, Apto, Bloco...">
+          </div>
+          <div class="form-group">
+            <label>Bairro</label>
+            <input type="text" class="form-control" id="cliente-bairro">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cidade</label>
+            <input type="text" class="form-control" id="cliente-cidade">
+          </div>
+          <div class="form-group" style="max-width: 90px;">
+            <label>UF</label>
+            <input type="text" class="form-control" id="cliente-uf" maxlength="2" style="text-transform: uppercase;">
+          </div>
+          <div class="form-group" style="max-width: 140px;">
+            <label>CEP</label>
+            <input type="text" class="form-control" id="cliente-cep" placeholder="00000-000" oninput="CLI.mascaraCEP(this)">
+          </div>
+        </div>
+
+        <h3 style="font-family: var(--font-heading); font-size: 13px; margin: 16px 0 8px; color: var(--cinza);">Contato Principal</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Responsável (Síndico/Gestor)</label>
+            <input type="text" class="form-control" id="cliente-responsavel">
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" class="form-control" id="cliente-cargo" placeholder="Síndico, Diretor...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>E-mail Geral</label>
+            <input type="email" class="form-control" id="cliente-email">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" class="form-control" id="cliente-telefone" oninput="CLI.mascaraTelefone(this)">
+          </div>
+        </div>
+
+        <h3 style="font-family: var(--font-heading); font-size: 13px; margin: 16px 0 8px; color: var(--cinza);">Contato Financeiro / Cobrança</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Financeiro</label>
+            <input type="text" class="form-control" id="cliente-fin-nome">
+          </div>
+          <div class="form-group">
+            <label>E-mail de Cobrança</label>
+            <input type="email" class="form-control" id="cliente-email-cobranca" placeholder="financeiro@...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Telefone de Cobrança</label>
+            <input type="text" class="form-control" id="cliente-tel-cobranca" oninput="CLI.mascaraTelefone(this)">
+          </div>
+          <div class="form-group">
+            <label>WhatsApp</label>
+            <input type="text" class="form-control" id="cliente-whatsapp" placeholder="(48) 99999-9999" oninput="CLI.mascaraTelefone(this)">
+          </div>
+        </div>
+
+        <h3 style="font-family: var(--font-heading); font-size: 13px; margin: 16px 0 8px; color: var(--cinza);">Preferências de Notificação</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="cliente-notif-email" checked>
+              <span>Enviar lembretes por e-mail</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="cliente-notif-whatsapp" checked>
+              <span>Enviar lembretes por WhatsApp</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea class="form-control" id="cliente-observacoes" rows="2"></textarea>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-cliente')">Cancelar</button>
+        <button class="btn btn-primary" onclick="CLI.save()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes do cliente (obras vinculadas) -->
+  <div class="modal-overlay" id="modal-cliente-obras">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 id="modal-co-title">Obras do Cliente</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-cliente-obras')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-co-body">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
+  <script src="js/db.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/nav.js?v=6"></script>
+  <script src="js/clientes.js?v=1"></script>
+  <script>
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      document.getElementById('sidebar').innerHTML = renderSidebar('clientes');
+      CLI.init();
+    });
+  </script>
+</body>
+</html>

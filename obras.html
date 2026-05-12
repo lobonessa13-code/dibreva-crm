@@ -85,6 +85,15 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="obra-id">
+
+        <div class="form-group">
+          <label>Cliente Cadastrado</label>
+          <select class="form-control" id="obra-cliente-id" onchange="OBRAS.preencherDoCliente()">
+            <option value="">— Selecionar cliente cadastrado (ou preencher manualmente) —</option>
+          </select>
+          <small style="color: var(--cinza); font-size: 11px;">Vincular a um cliente já cadastrado preenche os campos automaticamente e habilita lembretes de cobrança.</small>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label>Condomínio <span class="required">*</span></label>
@@ -154,14 +163,94 @@
     </div>
   </div>
 
-  <script src="js/supabase-config.js?v=5"></script>
+  <!-- Modal: Aditivos da Obra -->
+  <div class="modal-overlay" id="modal-aditivos">
+    <div class="modal" style="max-width: 720px;">
+      <div class="modal-header">
+        <h2 id="modal-aditivos-title">Aditivos da Obra</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-aditivos')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-aditivos-body">
+        <div class="spinner"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-aditivos')">Fechar</button>
+        <button class="btn btn-primary" onclick="OBRAS.openNovoAditivo()">+ Novo Aditivo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Novo/Editar Aditivo -->
+  <div class="modal-overlay" id="modal-aditivo-form">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h2 id="modal-ad-title">Novo Aditivo</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-aditivo-form')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="aditivo-id">
+        <input type="hidden" id="aditivo-obra-id">
+
+        <div class="form-row">
+          <div class="form-group" style="max-width: 100px;">
+            <label>Número</label>
+            <input type="number" class="form-control" id="aditivo-numero" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label>Data do Aditivo <span class="required">*</span></label>
+            <input type="date" class="form-control" id="aditivo-data">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Descrição <span class="required">*</span></label>
+          <textarea class="form-control" id="aditivo-descricao" rows="3" placeholder="Ex: Inclusão de impermeabilização da cobertura"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Valor Adicional (R$)</label>
+            <input type="number" class="form-control" id="aditivo-valor" step="0.01" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label>Prazo Adicional (dias)</label>
+            <input type="number" class="form-control" id="aditivo-prazo" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>URL do Aditivo Assinado (opcional)</label>
+          <input type="url" class="form-control" id="aditivo-url" placeholder="https://...">
+        </div>
+
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea class="form-control" id="aditivo-observacoes" rows="2"></textarea>
+        </div>
+
+        <div style="background: var(--fundo); padding: 10px; border-radius: 6px; font-size: 12px; color: var(--cinza);">
+          ℹ Salvar este aditivo NÃO cria automaticamente parcelas de receita. Após registrar, vá no Financeiro para adicionar as parcelas de cobrança correspondentes.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-aditivo-form')">Cancelar</button>
+        <button class="btn btn-primary" onclick="OBRAS.saveAditivo()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
   <script src="js/db.js?v=5"></script>
   <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=5"></script>
-  <script src="js/obras.js?v=5"></script>
+  <script src="js/nav.js?v=6"></script>
+  <script src="js/obras.js?v=6"></script>
   <script>
-    document.getElementById('sidebar').innerHTML = renderSidebar('obras');
-    OBRAS.init();
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      document.getElementById('sidebar').innerHTML = renderSidebar('obras');
+      OBRAS.init();
+    });
 
     function mascaraCNPJ(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 14);

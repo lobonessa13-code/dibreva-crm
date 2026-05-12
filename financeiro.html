@@ -45,6 +45,35 @@
       <div class="kpi-card"><div class="kpi-label">Faturamento do Mês</div><div class="kpi-value success" id="kpi-faturamento">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Despesas do Mês</div><div class="kpi-value danger" id="kpi-despesas">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Lucro Bruto</div><div class="kpi-value" id="kpi-lucro">—</div></div>
+      <div class="kpi-card" style="cursor: pointer;" onclick="document.getElementById('card-inadimplentes').scrollIntoView({behavior:'smooth'})">
+        <div class="kpi-label">Inadimplência</div>
+        <div class="kpi-value danger" id="kpi-inadimplencia">—</div>
+        <div class="kpi-sub" id="kpi-inadimplencia-qtd">—</div>
+      </div>
+    </div>
+
+    <!-- Card: Inadimplentes -->
+    <div class="panel" id="card-inadimplentes" style="margin-bottom: 20px; border-left: 4px solid var(--danger);">
+      <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="color: var(--danger); display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Inadimplentes e parcelas a vencer
+        </h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 11px; color: var(--cinza);">
+            <span style="color: #f59e0b;">●</span> 1-7d
+            <span style="color: #f97316; margin-left: 6px;">●</span> 8-15d
+            <span style="color: var(--danger); margin-left: 6px;">●</span> 16+d
+          </span>
+          <button class="btn btn-sm btn-secondary" onclick="FIN.marcarAtrasos()" title="Recalcular status de atraso">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+      <div class="panel-body" id="inadimplentes-list">
+        <div class="spinner"></div>
+      </div>
     </div>
 
     <!-- Painéis: Receitas e Despesas -->
@@ -197,14 +226,104 @@
     </div>
   </div>
 
-  <script src="js/supabase-config.js?v=5"></script>
+  <!-- Modal: Envio manual de lembrete -->
+  <div class="modal-overlay" id="modal-lembrete">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h2>Enviar Lembrete de Cobrança</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-lembrete')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="lembrete-receita-id">
+        <div id="lembrete-info" style="background: var(--fundo); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"></div>
+
+        <div class="form-group">
+          <label>Canais <span class="required">*</span></label>
+          <div style="display: flex; gap: 16px; padding: 8px 0;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="lembrete-email" checked> E-mail
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="lembrete-whatsapp" checked> WhatsApp
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tom da mensagem</label>
+          <select class="form-control" id="lembrete-fase">
+            <option value="lembrete">Cordial — Lembrete amigável</option>
+            <option value="suave">Suave — Pagamento em atraso (1-7 dias)</option>
+            <option value="formal">Formal — Cobrança (8+ dias)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Mensagem (você pode editar)</label>
+          <textarea class="form-control" id="lembrete-mensagem" rows="6"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-lembrete')">Cancelar</button>
+        <button class="btn btn-primary" onclick="FIN.enviarLembrete()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar pagamento -->
+  <div class="modal-overlay" id="modal-pagamento">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2>Registrar Pagamento</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-pagamento')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pag-receita-id">
+        <div id="pag-info" style="background: var(--fundo); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data do Recebimento <span class="required">*</span></label>
+            <input type="date" class="form-control" id="pag-data">
+          </div>
+          <div class="form-group">
+            <label>Forma de Pagamento</label>
+            <select class="form-control" id="pag-forma">
+              <option value="">— Não informada —</option>
+              <option value="pix">PIX</option>
+              <option value="boleto">Boleto</option>
+              <option value="transferencia">Transferência</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="cheque">Cheque</option>
+              <option value="cartao">Cartão</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>URL do Comprovante (opcional)</label>
+          <input type="url" class="form-control" id="pag-comprovante" placeholder="https://...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-pagamento')">Cancelar</button>
+        <button class="btn btn-success" onclick="FIN.confirmarPagamento()">Confirmar Pagamento</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
   <script src="js/db.js?v=5"></script>
   <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=5"></script>
-  <script src="js/financeiro.js?v=5"></script>
+  <script src="js/nav.js?v=6"></script>
+  <script src="js/financeiro.js?v=6"></script>
   <script>
-    document.getElementById('sidebar').innerHTML = renderSidebar('financeiro');
-    FIN.init();
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      document.getElementById('sidebar').innerHTML = renderSidebar('financeiro');
+      FIN.init();
+    });
   </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 const OBRAS = {
   obras: [],
+  clientes: [],
   page: 1,
   perPage: 10,
 
@@ -25,6 +26,36 @@ const OBRAS = {
 
   async loadData() {
     this.obras = await DB.list('obras', { orderBy: 'created_at', ascending: false });
+    try {
+      this.clientes = await DB.list('clientes', { orderBy: 'nome', ascending: true });
+    } catch (e) {
+      console.warn('Tabela clientes ainda não existe — aplique a migration-financeiro-cobranca.sql');
+      this.clientes = [];
+    }
+  },
+
+  popularSelectClientes() {
+    const sel = document.getElementById('obra-cliente-id');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Selecionar cliente cadastrado —</option>' +
+      this.clientes.map(c => `<option value="${c.id}">${c.nome}${c.nome_condominio && c.nome_condominio !== c.nome ? ' — ' + c.nome_condominio : ''}</option>`).join('');
+  },
+
+  preencherDoCliente() {
+    const id = document.getElementById('obra-cliente-id').value;
+    if (!id) return;
+    const c = this.clientes.find(x => x.id === id);
+    if (!c) return;
+
+    const setIfEmpty = (elId, val) => {
+      const el = document.getElementById(elId);
+      if (el && !el.value && val) el.value = val;
+    };
+
+    document.getElementById('obra-condominio').value = c.nome_condominio || c.nome || '';
+    document.getElementById('obra-cliente').value = c.nome || '';
+    setIfEmpty('obra-cnpj', c.cpf_cnpj || '');
+    setIfEmpty('obra-cidade', c.endereco_cidade || '');
   },
 
   async renderKPIs() {
@@ -117,6 +148,9 @@ const OBRAS = {
               <button class="btn btn-sm btn-secondary btn-icon" title="Financeiro" onclick="OBRAS.openFinanceiro('${o.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </button>
+              <button class="btn btn-sm btn-secondary btn-icon" title="Aditivos" onclick="OBRAS.openAditivos('${o.id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </button>
               <button class="btn btn-sm btn-secondary btn-icon" title="Excluir" onclick="OBRAS.remove('${o.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
@@ -144,8 +178,11 @@ const OBRAS = {
 
   // --- CRUD ---
   openNew() {
+    this.popularSelectClientes();
     document.getElementById('modal-obra-title').textContent = 'Nova Obra';
     document.getElementById('obra-id').value = '';
+    const cs = document.getElementById('obra-cliente-id');
+    if (cs) cs.value = '';
     document.getElementById('obra-condominio').value = '';
     document.getElementById('obra-cliente').value = '';
     document.getElementById('obra-cnpj').value = '';
@@ -160,9 +197,12 @@ const OBRAS = {
 
   async openEdit(id) {
     try {
+      this.popularSelectClientes();
       const obra = await DB.get('obras', id);
       document.getElementById('modal-obra-title').textContent = 'Editar Obra';
       document.getElementById('obra-id').value = obra.id;
+      const cs = document.getElementById('obra-cliente-id');
+      if (cs) cs.value = obra.cliente_id || '';
       document.getElementById('obra-condominio').value = obra.condominio || '';
       document.getElementById('obra-cliente').value = obra.cliente || '';
       document.getElementById('obra-cnpj').value = obra.cnpj || '';
@@ -185,7 +225,9 @@ const OBRAS = {
 
     if (!condominio || !cliente) return UI.warning('Informe condomínio e cliente');
 
+    const clienteIdEl = document.getElementById('obra-cliente-id');
     const record = {
+      cliente_id: clienteIdEl?.value || null,
       condominio,
       cliente,
       cnpj: document.getElementById('obra-cnpj').value.trim() || null,
@@ -279,6 +321,142 @@ const OBRAS = {
       `;
     } catch (err) {
       body.innerHTML = `<p style="color: var(--danger);">Erro ao carregar dados financeiros: ${err.message}</p>`;
+    }
+  },
+
+  // --- Aditivos ---
+  async openAditivos(obraId) {
+    UI.openModal('modal-aditivos');
+    document.getElementById('aditivo-obra-id').value = obraId;
+    const body = document.getElementById('modal-aditivos-body');
+    body.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="spinner"></div></div>';
+
+    try {
+      const obra = await DB.get('obras', obraId);
+      const aditivos = await DB.list('aditivos', { filters: { obra_id: obraId }, orderBy: 'numero', ascending: true });
+
+      document.getElementById('modal-aditivos-title').textContent = `Aditivos — ${obra.condominio}`;
+
+      const totalAdicional = aditivos.reduce((s, a) => s + (a.valor_adicional || 0), 0);
+      const totalPrazo = aditivos.reduce((s, a) => s + (a.prazo_adicional_dias || 0), 0);
+      const valorOriginal = obra.valor_fechado || 0;
+
+      body.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="kpi-card"><div class="kpi-label">Valor Original</div><div class="kpi-value" style="font-size: 18px;">${UI.moeda(valorOriginal)}</div></div>
+          <div class="kpi-card"><div class="kpi-label">+ Aditivos</div><div class="kpi-value success" style="font-size: 18px;">${UI.moeda(totalAdicional)}</div><div class="kpi-sub">${aditivos.length} aditivo(s)</div></div>
+          <div class="kpi-card"><div class="kpi-label">Valor Total</div><div class="kpi-value" style="font-size: 18px;">${UI.moeda(valorOriginal + totalAdicional)}</div><div class="kpi-sub">+ ${totalPrazo} dias</div></div>
+        </div>
+
+        ${aditivos.length === 0 ? '<div class="empty-state"><p>Nenhum aditivo registrado para esta obra</p></div>' :
+          aditivos.map(a => `
+            <div class="panel-item">
+              <div class="panel-item-info">
+                <div class="item-title">Aditivo Nº ${a.numero} — ${UI.data(a.data_aditivo)}</div>
+                <div class="item-sub">${a.descricao}</div>
+                ${a.prazo_adicional_dias > 0 ? `<div class="item-sub">+ ${a.prazo_adicional_dias} dias de prazo</div>` : ''}
+                ${a.arquivo_url ? `<div class="item-sub"><a href="${a.arquivo_url}" target="_blank" style="color: var(--azul);">📎 Ver documento assinado</a></div>` : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="panel-item-value" style="color: var(--success);">+${UI.moeda(a.valor_adicional)}</div>
+                <div class="table-actions">
+                  <button class="btn btn-sm btn-secondary btn-icon" title="Editar" onclick="OBRAS.openEditAditivo('${a.id}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="btn btn-sm btn-secondary btn-icon" title="Excluir" onclick="OBRAS.removeAditivo('${a.id}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+      `;
+    } catch (err) {
+      body.innerHTML = `<p style="color: var(--danger);">Erro: ${err.message}. Verifique se aplicou a migration-financeiro-cobranca.sql</p>`;
+    }
+  },
+
+  async openNovoAditivo() {
+    const obraId = document.getElementById('aditivo-obra-id').value;
+    if (!obraId) return;
+
+    const aditivos = await DB.list('aditivos', { filters: { obra_id: obraId }, orderBy: 'numero', ascending: false });
+    const proximoNumero = aditivos.length > 0 ? (aditivos[0].numero + 1) : 1;
+
+    document.getElementById('modal-ad-title').textContent = 'Novo Aditivo';
+    document.getElementById('aditivo-id').value = '';
+    document.getElementById('aditivo-numero').value = proximoNumero;
+    document.getElementById('aditivo-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('aditivo-descricao').value = '';
+    document.getElementById('aditivo-valor').value = '0';
+    document.getElementById('aditivo-prazo').value = '0';
+    document.getElementById('aditivo-url').value = '';
+    document.getElementById('aditivo-observacoes').value = '';
+    UI.openModal('modal-aditivo-form');
+  },
+
+  async openEditAditivo(id) {
+    try {
+      const a = await DB.get('aditivos', id);
+      document.getElementById('modal-ad-title').textContent = `Editar Aditivo Nº ${a.numero}`;
+      document.getElementById('aditivo-id').value = a.id;
+      document.getElementById('aditivo-obra-id').value = a.obra_id;
+      document.getElementById('aditivo-numero').value = a.numero;
+      document.getElementById('aditivo-data').value = UI.dataISO(a.data_aditivo);
+      document.getElementById('aditivo-descricao').value = a.descricao || '';
+      document.getElementById('aditivo-valor').value = a.valor_adicional || 0;
+      document.getElementById('aditivo-prazo').value = a.prazo_adicional_dias || 0;
+      document.getElementById('aditivo-url').value = a.arquivo_url || '';
+      document.getElementById('aditivo-observacoes').value = a.observacoes || '';
+      UI.openModal('modal-aditivo-form');
+    } catch (err) {
+      UI.error('Erro ao carregar aditivo: ' + err.message);
+    }
+  },
+
+  async saveAditivo() {
+    const id = document.getElementById('aditivo-id').value;
+    const obraId = document.getElementById('aditivo-obra-id').value;
+    const descricao = document.getElementById('aditivo-descricao').value.trim();
+    const data = document.getElementById('aditivo-data').value;
+
+    if (!descricao || !data) return UI.warning('Preencha descrição e data');
+
+    const record = {
+      obra_id: obraId,
+      numero: parseInt(document.getElementById('aditivo-numero').value) || 1,
+      descricao,
+      valor_adicional: parseFloat(document.getElementById('aditivo-valor').value) || 0,
+      prazo_adicional_dias: parseInt(document.getElementById('aditivo-prazo').value) || 0,
+      data_aditivo: data,
+      arquivo_url: document.getElementById('aditivo-url').value.trim() || null,
+      observacoes: document.getElementById('aditivo-observacoes').value.trim() || null
+    };
+
+    try {
+      if (id) {
+        await DB.update('aditivos', id, record);
+        UI.success('Aditivo atualizado!');
+      } else {
+        await DB.create('aditivos', record);
+        UI.success('Aditivo registrado!');
+      }
+      UI.closeModal('modal-aditivo-form');
+      await this.openAditivos(obraId);
+    } catch (err) {
+      UI.error('Erro ao salvar: ' + err.message);
+    }
+  },
+
+  async removeAditivo(id) {
+    if (!await UI.confirm('Excluir este aditivo?')) return;
+    try {
+      const obraId = document.getElementById('aditivo-obra-id').value;
+      await DB.remove('aditivos', id);
+      UI.success('Aditivo excluído');
+      await this.openAditivos(obraId);
+    } catch (err) {
+      UI.error('Erro: ' + err.message);
     }
   }
 };

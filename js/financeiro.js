@@ -4,15 +4,19 @@ const FIN = {
   receitas: [],
   despesas: [],
   obras: [],
+  inadimplentes: [],
   ano: new Date().getFullYear(),
   mes: new Date().getMonth() + 1,
   chartFluxo: null,
 
   async init() {
     try {
+      // Marca atrasados automaticamente na carga
+      try { await DB.rpc('fn_marcar_atrasos'); } catch (e) { console.warn('fn_marcar_atrasos indisponível:', e); }
       await this.loadData();
       this.updateMonthLabel();
       this.renderKPIs();
+      this.renderInadimplentes();
       this.renderReceitas();
       this.renderDespesas();
       this.renderFluxoCaixa();
@@ -26,6 +30,14 @@ const FIN = {
   async loadData() {
     this.receitas = await DB.list('receitas', { orderBy: 'data_prevista', ascending: false });
     this.despesas = await DB.list('despesas', { orderBy: 'data_vencimento', ascending: false });
+    try {
+      const { data, error } = await sb.from('vw_inadimplentes').select('*');
+      if (error) throw error;
+      this.inadimplentes = data || [];
+    } catch (e) {
+      console.warn('vw_inadimplentes indisponível:', e?.message);
+      this.inadimplentes = [];
+    }
   },
 
   async loadObrasSelect() {
@@ -78,6 +90,16 @@ const FIN = {
 
   // --- KPIs ---
   async renderKPIs() {
+    // Inadimplência (sempre dos inadimplentes carregados)
+    const atrasados = this.inadimplentes.filter(i => (i.dias_atraso || 0) > 0);
+    const valorAtrasado = atrasados.reduce((s, i) => s + (i.valor || 0), 0);
+    const elInad = document.getElementById('kpi-inadimplencia');
+    const elInadQtd = document.getElementById('kpi-inadimplencia-qtd');
+    if (elInad) elInad.textContent = UI.moeda(valorAtrasado);
+    if (elInadQtd) elInadQtd.textContent = atrasados.length > 0
+      ? `${atrasados.length} parcela(s) atrasada(s)`
+      : 'Tudo em dia ✓';
+
     try {
       const kpis = await DB.rpc('fn_financeiro_kpis', { p_ano: this.ano, p_mes: this.mes });
       const fat = kpis?.faturamento_mes || 0;
@@ -113,17 +135,24 @@ const FIN = {
       return;
     }
 
-    list.innerHTML = recMes.map(r => `
-      <div class="panel-item">
+    list.innerHTML = recMes.map(r => {
+      const isAtrasada = r.status === 'atrasado';
+      const podeMarcarReceb = r.status === 'previsto' || r.status === 'atrasado';
+      return `
+      <div class="panel-item" style="${isAtrasada ? 'border-left: 3px solid var(--danger); padding-left: 9px;' : ''}">
         <div class="panel-item-info">
           <div class="item-title">${r.descricao}</div>
-          <div class="item-sub">${UI.data(r.data_prevista)} · ${UI.statusBadge(r.status)}</div>
+          <div class="item-sub">${UI.data(r.data_prevista)} · ${UI.statusBadge(r.status)}${isAtrasada ? ' · <strong style="color:var(--danger);">Atrasada</strong>' : ''}</div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <div class="panel-item-value" style="color: var(--success);">+${UI.moeda(r.valor)}</div>
+          <div class="panel-item-value" style="color: ${isAtrasada ? 'var(--danger)' : 'var(--success)'};">${isAtrasada ? '!' : '+'}${UI.moeda(r.valor)}</div>
           <div class="table-actions">
-            ${r.status === 'previsto' ? `
-              <button class="btn btn-sm btn-success btn-icon" title="Marcar Recebido" onclick="FIN.marcarRecebido('${r.id}')">
+            ${isAtrasada ? `
+              <button class="btn btn-sm btn-icon" style="background: var(--laranja); color: white;" title="Enviar lembrete" onclick="FIN.openLembrete('${r.id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </button>` : ''}
+            ${podeMarcarReceb ? `
+              <button class="btn btn-sm btn-success btn-icon" title="Registrar Pagamento" onclick="FIN.openPagamento('${r.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
               </button>` : ''}
             <button class="btn btn-sm btn-secondary btn-icon" title="Editar" onclick="FIN.editReceita('${r.id}')">
@@ -135,7 +164,289 @@ const FIN = {
           </div>
         </div>
       </div>
-    `).join('');
+    `;}).join('');
+  },
+
+  // --- Inadimplentes ---
+  renderInadimplentes() {
+    const list = document.getElementById('inadimplentes-list');
+    if (!list) return;
+
+    if (this.inadimplentes.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>✓ Nenhuma parcela atrasada ou próxima do vencimento</p></div>';
+      return;
+    }
+
+    list.innerHTML = this.inadimplentes.map(i => {
+      const cor = {
+        a_vencer: 'var(--cinza)',
+        amarelo: '#f59e0b',
+        laranja: '#f97316',
+        vermelho: 'var(--danger)'
+      }[i.nivel_alerta] || 'var(--cinza)';
+
+      const statusTxt = i.dias_atraso > 0
+        ? `<strong style="color: ${cor};">${i.dias_atraso} dia(s) em atraso</strong>`
+        : i.dias_atraso === 0
+          ? '<strong style="color: var(--laranja);">Vence hoje</strong>'
+          : `<span style="color: var(--cinza);">Vence em ${Math.abs(i.dias_atraso)} dia(s)</span>`;
+
+      const nomeCliente = i.cliente_nome || i.cliente_obra_nome || '—';
+      const contato = [i.email_cobranca || i.email, i.whatsapp || i.telefone].filter(Boolean).join(' · ');
+
+      return `
+        <div class="panel-item" style="border-left: 3px solid ${cor}; padding-left: 9px;">
+          <div class="panel-item-info" style="flex: 1;">
+            <div class="item-title">${i.descricao}</div>
+            <div class="item-sub">
+              ${i.condominio ? `<strong>${i.condominio}</strong> · ` : ''}${nomeCliente}<br>
+              Vencimento: ${UI.data(i.data_prevista)} · ${statusTxt}
+              ${i.qtd_lembretes_enviados > 0 ? `<br><small style="color: var(--cinza);">📨 ${i.qtd_lembretes_enviados} lembrete(s) enviado(s)${i.ultimo_lembrete_em ? ' · último em ' + UI.data(i.ultimo_lembrete_em) : ''}</small>` : ''}
+              ${contato ? `<br><small style="color: var(--cinza);">${contato}</small>` : ''}
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="panel-item-value" style="color: ${cor};">${UI.moeda(i.valor)}</div>
+            <div class="table-actions">
+              ${i.dias_atraso > 0 ? `
+                <button class="btn btn-sm" style="background: var(--laranja); color: white;" title="Enviar lembrete" onclick="FIN.openLembrete('${i.receita_id}')">
+                  Lembrar
+                </button>` : ''}
+              <button class="btn btn-sm btn-success" title="Registrar pagamento" onclick="FIN.openPagamento('${i.receita_id}')">
+                Pago
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async marcarAtrasos() {
+    try {
+      const count = await DB.rpc('fn_marcar_atrasos');
+      UI.success(`${count || 0} receita(s) marcadas como atrasadas`);
+      await this.loadData();
+      this.renderKPIs();
+      this.renderInadimplentes();
+      this.renderReceitas();
+    } catch (err) {
+      UI.error('Erro ao atualizar atrasos: ' + err.message);
+    }
+  },
+
+  // --- Modal Pagamento ---
+  async openPagamento(receitaId) {
+    try {
+      const r = await DB.get('receitas', receitaId);
+      document.getElementById('pag-receita-id').value = r.id;
+      document.getElementById('pag-data').value = new Date().toISOString().split('T')[0];
+      document.getElementById('pag-forma').value = '';
+      document.getElementById('pag-comprovante').value = '';
+      document.getElementById('pag-info').innerHTML = `
+        <strong>${r.descricao}</strong><br>
+        Valor: ${UI.moeda(r.valor)} · Vencimento: ${UI.data(r.data_prevista)}
+      `;
+      UI.openModal('modal-pagamento');
+    } catch (err) {
+      UI.error('Erro: ' + err.message);
+    }
+  },
+
+  async confirmarPagamento() {
+    const id = document.getElementById('pag-receita-id').value;
+    const data = document.getElementById('pag-data').value;
+    const forma = document.getElementById('pag-forma').value || null;
+    const comprovante = document.getElementById('pag-comprovante').value.trim() || null;
+
+    if (!data) return UI.warning('Informe a data do recebimento');
+
+    try {
+      await DB.rpc('fn_registrar_pagamento', {
+        p_receita_id: id,
+        p_data_recebimento: data,
+        p_forma_pagamento: forma,
+        p_comprovante_url: comprovante
+      });
+      UI.success('Pagamento registrado!');
+      UI.closeModal('modal-pagamento');
+      await this.loadData();
+      this.renderKPIs();
+      this.renderInadimplentes();
+      this.renderReceitas();
+      this.renderFluxoCaixa();
+    } catch (err) {
+      // Fallback se a função não existir
+      try {
+        await DB.update('receitas', id, {
+          status: 'recebido',
+          data_recebimento: data,
+          forma_pagamento: forma,
+          comprovante_url: comprovante
+        });
+        UI.success('Pagamento registrado!');
+        UI.closeModal('modal-pagamento');
+        await this.loadData();
+        this.renderKPIs();
+        this.renderInadimplentes();
+        this.renderReceitas();
+        this.renderFluxoCaixa();
+      } catch (e2) {
+        UI.error('Erro ao registrar pagamento: ' + e2.message);
+      }
+    }
+  },
+
+  // --- Modal Lembrete ---
+  async openLembrete(receitaId) {
+    try {
+      const inad = this.inadimplentes.find(i => i.receita_id === receitaId);
+      if (!inad) {
+        UI.warning('Dados de cobrança não encontrados. Verifique se a obra tem cliente vinculado.');
+        return;
+      }
+
+      document.getElementById('lembrete-receita-id').value = receitaId;
+      document.getElementById('lembrete-info').innerHTML = `
+        <strong>${inad.descricao}</strong><br>
+        ${inad.condominio || ''} · ${inad.cliente_nome || inad.cliente_obra_nome || '—'}<br>
+        Valor: <strong>${UI.moeda(inad.valor)}</strong> · Vencimento: ${UI.data(inad.data_prevista)}<br>
+        ${inad.dias_atraso > 0 ? `<strong style="color: var(--danger);">${inad.dias_atraso} dia(s) em atraso</strong>` : 'A vencer'}
+      `;
+
+      // Definir fase sugerida automaticamente
+      const fase = inad.dias_atraso <= 0 ? 'lembrete' : inad.dias_atraso <= 7 ? 'suave' : 'formal';
+      document.getElementById('lembrete-fase').value = fase;
+      document.getElementById('lembrete-email').checked = inad.email_cobranca || inad.email ? true : false;
+      document.getElementById('lembrete-whatsapp').checked = inad.whatsapp || inad.telefone ? true : false;
+
+      this.atualizarMensagemLembrete();
+      document.getElementById('lembrete-fase').onchange = () => this.atualizarMensagemLembrete();
+
+      UI.openModal('modal-lembrete');
+    } catch (err) {
+      UI.error('Erro: ' + err.message);
+    }
+  },
+
+  atualizarMensagemLembrete() {
+    const receitaId = document.getElementById('lembrete-receita-id').value;
+    const inad = this.inadimplentes.find(i => i.receita_id === receitaId);
+    if (!inad) return;
+
+    const fase = document.getElementById('lembrete-fase').value;
+    const responsavel = inad.nome_responsavel || 'Prezado(a)';
+    const condominio = inad.condominio || inad.cliente_nome || '';
+    const valor = UI.moeda(inad.valor);
+    const venc = UI.data(inad.data_prevista);
+    const desc = inad.descricao;
+
+    const templates = {
+      lembrete: `Olá, ${responsavel}!
+
+Passando para lembrar amigavelmente do vencimento da parcela:
+
+📋 ${desc}
+🏢 ${condominio}
+💰 Valor: ${valor}
+📅 Vencimento: ${venc}
+
+Caso já tenha efetuado o pagamento, por favor desconsidere esta mensagem.
+
+Qualquer dúvida estamos à disposição.
+
+Atenciosamente,
+DIBREVA — Manutenção e Restauração Predial
+(48) 99635-0627`,
+
+      suave: `Olá, ${responsavel}!
+
+Identificamos que a parcela abaixo está com pagamento em aberto:
+
+📋 ${desc}
+🏢 ${condominio}
+💰 Valor: ${valor}
+📅 Venceu em: ${venc} (${inad.dias_atraso} dia(s) atrás)
+
+Poderia, por gentileza, verificar internamente o status do pagamento? Se já foi efetuado, agradecemos se puder nos encaminhar o comprovante.
+
+Estamos à disposição para qualquer esclarecimento.
+
+Atenciosamente,
+DIBREVA — Manutenção e Restauração Predial
+(48) 99635-0627 · dibrevaltda@gmail.com`,
+
+      formal: `Prezado(a) ${responsavel},
+
+Comunicamos que a parcela abaixo encontra-se em atraso há ${inad.dias_atraso} dias:
+
+📋 ${desc}
+🏢 ${condominio}
+💰 Valor original: ${valor}
+📅 Vencimento original: ${venc}
+
+Solicitamos a regularização do pagamento o quanto antes para evitar a aplicação das penalidades previstas em contrato (juros e multa).
+
+Caso já tenha efetuado o pagamento, por favor nos encaminhe o comprovante para baixarmos o débito.
+
+Para qualquer negociação ou esclarecimento, entre em contato:
+📞 (48) 99635-0627
+✉ dibrevaltda@gmail.com
+
+DIBREVA — Manutenção e Restauração Predial
+CNPJ 15.332.344/0001-75`
+    };
+
+    document.getElementById('lembrete-mensagem').value = templates[fase] || templates.lembrete;
+  },
+
+  async enviarLembrete() {
+    const receitaId = document.getElementById('lembrete-receita-id').value;
+    const fase = document.getElementById('lembrete-fase').value;
+    const mensagem = document.getElementById('lembrete-mensagem').value.trim();
+    const enviarEmail = document.getElementById('lembrete-email').checked;
+    const enviarWhats = document.getElementById('lembrete-whatsapp').checked;
+
+    if (!mensagem) return UI.warning('Mensagem não pode ficar vazia');
+    if (!enviarEmail && !enviarWhats) return UI.warning('Selecione ao menos um canal');
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token || SUPABASE_KEY;
+      const supabaseUrl = SUPABASE_URL;
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/enviar-lembrete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          receita_id: receitaId,
+          fase,
+          mensagem,
+          canais: {
+            email: enviarEmail,
+            whatsapp: enviarWhats
+          }
+        })
+      });
+
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Erro no envio');
+
+      const enviados = [];
+      if (result.email?.status === 'enviado') enviados.push('e-mail');
+      if (result.whatsapp?.status === 'enviado') enviados.push('WhatsApp');
+
+      UI.success(`Lembrete enviado: ${enviados.join(' + ') || 'verifique o log'}`);
+      UI.closeModal('modal-lembrete');
+      await this.loadData();
+      this.renderInadimplentes();
+    } catch (err) {
+      UI.error('Erro ao enviar: ' + err.message);
+    }
   },
 
   renderDespesas() {
