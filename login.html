@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA — Login</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--azul);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.03;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px),
+        repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px);
+    }
+
+    .login-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 400px;
+      padding: 48px 40px 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo svg { width: 200px; height: auto; }
+
+    .login-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--azul);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--cinza);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--azul);
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--cinza-light);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--azul);
+      background: var(--white);
+      transition: border-color var(--transition);
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--laranja);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: var(--laranja);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background var(--transition);
+      margin-top: 8px;
+    }
+
+    .btn-login:hover { background: var(--laranja-hover); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .login-error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .login-toggle {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--cinza);
+    }
+
+    .login-toggle a {
+      color: var(--laranja);
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .login-toggle a:hover { text-decoration: underline; }
+
+    .login-success {
+      background: var(--success-bg);
+      color: var(--success);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11px;
+      color: var(--cinza);
+    }
+
+    @media (max-width: 480px) {
+      .login-card { margin: 16px; padding: 32px 24px 28px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="8" width="28" height="44" rx="2" fill="none" stroke="#D46250" stroke-width="2.5"/>
+        <polyline points="12,36 18,28 24,36" fill="none" stroke="#D46250" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="12,30 18,22 24,30" fill="none" stroke="#D46250" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="12,24 18,16 24,24" fill="none" stroke="#D46250" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="42" y="32" font-family="Montserrat, sans-serif" font-weight="800" font-size="20" fill="#1D2A3A" letter-spacing="3">DIBREVA</text>
+        <text x="42" y="48" font-family="Calibri, sans-serif" font-size="8" fill="#A6B0B3" letter-spacing="1.5">MANUTENÇÃO &amp; RESTAURAÇÃO PREDIAL</text>
+      </svg>
+    </div>
+
+    <h1 class="login-title">Acesso ao Sistema</h1>
+    <p class="login-subtitle">Mini ERP + CRM</p>
+
+    <div class="login-error" id="login-error"></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" class="form-control" id="login-email" required placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" class="form-control" id="login-password" required placeholder="Sua senha" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-login" id="btn-login">Entrar</button>
+    </form>
+
+    <div class="login-toggle">
+      <span id="toggle-text">Primeiro acesso?</span>
+      <a href="#" id="toggle-link" onclick="toggleMode(event)">Criar conta</a>
+    </div>
+
+    <div class="login-success" id="login-success"></div>
+
+    <div class="login-footer">DIBREVA Mini ERP v1.0</div>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script>
+    // Se já está logado, redireciona para o CRM
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) window.location.href = 'crm.html';
+    })();
+
+    let isSignUp = false;
+
+    function toggleMode(e) {
+      e.preventDefault();
+      isSignUp = !isSignUp;
+      const btn = document.getElementById('btn-login');
+      const toggleText = document.getElementById('toggle-text');
+      const toggleLink = document.getElementById('toggle-link');
+      const title = document.querySelector('.login-title');
+      const errorEl = document.getElementById('login-error');
+      const successEl = document.getElementById('login-success');
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (isSignUp) {
+        btn.textContent = 'Criar Conta';
+        title.textContent = 'Criar Conta';
+        toggleText.textContent = 'Já tem conta?';
+        toggleLink.textContent = 'Fazer login';
+      } else {
+        btn.textContent = 'Entrar';
+        title.textContent = 'Acesso ao Sistema';
+        toggleText.textContent = 'Primeiro acesso?';
+        toggleLink.textContent = 'Criar conta';
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-login');
+      const errorEl = document.getElementById('login-error');
+      const successEl = document.getElementById('login-success');
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      btn.disabled = true;
+      btn.textContent = isSignUp ? 'Criando...' : 'Entrando...';
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      try {
+        if (isSignUp) {
+          if (password.length < 6) throw { message: 'short_password' };
+          const { data, error } = await sb.auth.signUp({ email, password });
+          if (error) throw error;
+          // Se retornou sessão, já entra direto
+          if (data.session) {
+            window.location.href = 'crm.html';
+            return;
+          }
+          // Se não retornou sessão, tenta login direto
+          const { error: loginErr } = await sb.auth.signInWithPassword({ email, password });
+          if (!loginErr) {
+            window.location.href = 'crm.html';
+            return;
+          }
+          // Fallback: pede para verificar email
+          successEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar, depois faça login.';
+          successEl.style.display = 'block';
+          isSignUp = false;
+          btn.textContent = 'Entrar';
+          document.querySelector('.login-title').textContent = 'Acesso ao Sistema';
+          document.getElementById('toggle-text').textContent = 'Primeiro acesso?';
+          document.getElementById('toggle-link').textContent = 'Criar conta';
+          document.getElementById('login-password').value = '';
+        } else {
+          const { error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          window.location.href = 'crm.html';
+        }
+      } catch (err) {
+        const msg = err.message;
+        if (msg === 'short_password') {
+          errorEl.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        } else if (msg === 'Invalid login credentials') {
+          errorEl.textContent = 'E-mail ou senha incorretos.';
+        } else if (msg.includes('already registered')) {
+          errorEl.textContent = 'Este e-mail já está cadastrado.';
+        } else {
+          errorEl.textContent = isSignUp ? 'Erro ao criar conta. Tente novamente.' : 'Erro ao fazer login. Tente novamente.';
+        }
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = isSignUp ? 'Criar Conta' : 'Entrar';
+      }
+
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
