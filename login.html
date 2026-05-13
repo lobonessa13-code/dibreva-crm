@@ -197,6 +197,10 @@
       <a href="#" id="toggle-link" onclick="toggleMode(event)">Criar conta</a>
     </div>
 
+    <div class="login-toggle" id="forgot-row">
+      <a href="#" onclick="esqueciSenha(event)">Esqueci minha senha</a>
+    </div>
+
     <div class="login-success" id="login-success"></div>
 
     <div class="login-footer">DIBREVA Mini ERP v1.0</div>
@@ -298,6 +302,34 @@
       }
 
       btn.disabled = false;
+    }
+
+    async function esqueciSenha(e) {
+      e.preventDefault();
+      const errorEl = document.getElementById('login-error');
+      const successEl = document.getElementById('login-success');
+      const email = document.getElementById('login-email').value.trim();
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!email) {
+        errorEl.textContent = 'Digite seu e-mail no campo acima antes de pedir reset.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const redirectTo = `${window.location.origin}/reset-password.html`;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+
+      if (error) {
+        errorEl.textContent = 'Erro ao enviar email de reset: ' + error.message;
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      successEl.textContent = `Email de reset enviado para ${email}. Verifique sua caixa de entrada (e o spam).`;
+      successEl.style.display = 'block';
     }
   </script>
 </body>
