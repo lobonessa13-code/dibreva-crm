@@ -109,15 +109,18 @@
 
   </main>
 
-  <script src="js/supabase-config.js?v=9"></script>
-  <script src="js/auth.js?v=9"></script>
-  <script src="js/db.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=5"></script>
+  <script src="js/supabase-config.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/db.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/nav.js?v=10"></script>
   <script>
+    try {
+      document.getElementById('sidebar').innerHTML = renderSidebar('setup');
+    } catch (e) { console.error('Erro ao renderizar sidebar:', e); }
+
     Auth.guard().then(ok => {
       if (!ok) return;
-      document.getElementById('sidebar').innerHTML = renderSidebar('setup');
       // Preencher chave salva
       const saved = localStorage.getItem('dibreva_claude_key');
       if (saved) {
@@ -127,7 +130,7 @@
         badge.className = 'badge badge-aprovado';
         badge.style.display = '';
       }
-    });
+    }).catch(e => console.error('Erro em Auth.guard:', e));
 
     function salvarChaveClaude() {
       const key = document.getElementById('input-claude-key').value.trim();

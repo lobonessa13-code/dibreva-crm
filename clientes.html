@@ -249,18 +249,21 @@
     </div>
   </div>
 
-  <script src="js/supabase-config.js?v=9"></script>
-  <script src="js/auth.js?v=9"></script>
-  <script src="js/db.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=6"></script>
-  <script src="js/clientes.js?v=1"></script>
+  <script src="js/supabase-config.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/db.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/nav.js?v=10"></script>
+  <script src="js/clientes.js?v=10"></script>
   <script>
+    try {
+      document.getElementById('sidebar').innerHTML = renderSidebar('clientes');
+    } catch (e) { console.error('Erro ao renderizar sidebar:', e); }
+
     Auth.guard().then(ok => {
       if (!ok) return;
-      document.getElementById('sidebar').innerHTML = renderSidebar('clientes');
       CLI.init();
-    });
+    }).catch(e => console.error('Erro em Auth.guard:', e));
   </script>
 </body>
 </html>

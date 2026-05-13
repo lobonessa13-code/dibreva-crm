@@ -239,18 +239,21 @@
     </div>
   </div>
 
-  <script src="js/supabase-config.js?v=9"></script>
-  <script src="js/auth.js?v=9"></script>
-  <script src="js/db.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/nav.js?v=6"></script>
-  <script src="js/obras.js?v=6"></script>
+  <script src="js/supabase-config.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/db.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/nav.js?v=10"></script>
+  <script src="js/obras.js?v=10"></script>
   <script>
+    try {
+      document.getElementById('sidebar').innerHTML = renderSidebar('obras');
+    } catch (e) { console.error('Erro ao renderizar sidebar:', e); }
+
     Auth.guard().then(ok => {
       if (!ok) return;
-      document.getElementById('sidebar').innerHTML = renderSidebar('obras');
       OBRAS.init();
-    });
+    }).catch(e => console.error('Erro em Auth.guard:', e));
 
     function mascaraCNPJ(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 14);

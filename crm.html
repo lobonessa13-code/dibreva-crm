@@ -334,14 +334,21 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/supabase-config.js?v=8"></script>
-  <script src="js/db.js?v=8"></script>
-  <script src="js/ui.js?v=8"></script>
-  <script src="js/nav.js?v=8"></script>
-  <script src="js/crm.js?v=8"></script>
+  <script src="js/supabase-config.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/db.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/nav.js?v=10"></script>
+  <script src="js/crm.js?v=10"></script>
   <script>
-    document.getElementById('sidebar').innerHTML = renderSidebar('crm');
-    CRM.init();
+    try {
+      document.getElementById('sidebar').innerHTML = renderSidebar('crm');
+    } catch (e) { console.error('Erro ao renderizar sidebar:', e); }
+
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      CRM.init();
+    }).catch(e => console.error('Erro em Auth.guard:', e));
 
     function mascaraCNPJ(input) {
       let v = input.value.replace(/\D/g, '').slice(0, 14);
