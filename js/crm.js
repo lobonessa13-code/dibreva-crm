@@ -51,7 +51,10 @@ const CRM = {
     statusEl.addEventListener('change', () => {
       const hoje = new Date().toISOString().split('T')[0];
       const status = statusEl.value;
-      if (status === 'orcamento_enviado') {
+      if (status === 'visita_tecnica') {
+        const el = document.getElementById('lead-data-visita-tecnica');
+        if (el && !el.value) el.value = hoje;
+      } else if (status === 'orcamento_enviado') {
         const el = document.getElementById('lead-data-envio-orcamento');
         if (el && !el.value) el.value = hoje;
       } else if (status === 'aprovado') {
@@ -313,6 +316,7 @@ const CRM = {
     document.getElementById('lead-probabilidade').value = '30';
     document.getElementById('lead-observacoes').value = '';
     document.getElementById('lead-data-entrada').value = hoje;
+    document.getElementById('lead-data-visita-tecnica').value = '';
     document.getElementById('lead-data-envio-orcamento').value = '';
     document.getElementById('lead-data-aprovacao').value = '';
     document.getElementById('lead-data-perdido').value = '';
@@ -337,6 +341,7 @@ const CRM = {
       document.getElementById('lead-probabilidade').value = lead.probabilidade ?? 30;
       document.getElementById('lead-observacoes').value = lead.observacoes || '';
       document.getElementById('lead-data-entrada').value = lead.data_entrada || '';
+      document.getElementById('lead-data-visita-tecnica').value = lead.data_visita_tecnica || '';
       document.getElementById('lead-data-envio-orcamento').value = lead.data_envio_orcamento || '';
       document.getElementById('lead-data-aprovacao').value = lead.data_aprovacao || '';
       document.getElementById('lead-data-perdido').value = lead.data_perdido || '';
@@ -372,6 +377,7 @@ const CRM = {
       probabilidade: parseInt(document.getElementById('lead-probabilidade').value) || 30,
       observacoes: document.getElementById('lead-observacoes').value.trim() || null,
       data_entrada: document.getElementById('lead-data-entrada').value || null,
+      data_visita_tecnica: document.getElementById('lead-data-visita-tecnica').value || null,
       data_envio_orcamento: document.getElementById('lead-data-envio-orcamento').value || null,
       data_aprovacao: document.getElementById('lead-data-aprovacao').value || null,
       data_perdido: document.getElementById('lead-data-perdido').value || null
