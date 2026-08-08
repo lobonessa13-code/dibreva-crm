@@ -192,6 +192,10 @@ body {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.pipeline-4col {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 /* ===== Two Panel Layout ===== */
 .two-panels {
   display: grid;

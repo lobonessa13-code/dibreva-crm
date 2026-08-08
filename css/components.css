@@ -687,3 +687,124 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   min-width: 130px;
   text-align: center;
 }
+
+/* ===== Módulo Tarefas ===== */
+
+/* Colunas do board */
+.stage-a_fazer .pipeline-header { background: rgba(58,123,191,0.05); }
+.stage-a_fazer .pipeline-header h3 { color: var(--info); }
+.stage-a_fazer .pipeline-body { border-top-color: var(--info); }
+
+.stage-em_andamento .pipeline-header { background: rgba(229,161,0,0.05); }
+.stage-em_andamento .pipeline-header h3 { color: var(--warning); }
+.stage-em_andamento .pipeline-body { border-top-color: var(--warning); }
+
+.stage-aguardando_decisao .pipeline-header { background: rgba(127,90,180,0.05); }
+.stage-aguardando_decisao .pipeline-header h3 { color: #7F5AB4; }
+.stage-aguardando_decisao .pipeline-body { border-top-color: #7F5AB4; }
+
+.stage-concluida .pipeline-header { background: rgba(45,142,94,0.05); }
+.stage-concluida .pipeline-header h3 { color: var(--success); }
+.stage-concluida .pipeline-body { border-top-color: var(--success); }
+
+/* Badges de status */
+.badge-a_fazer { background: var(--info-bg); color: var(--info); }
+.badge-em_andamento { background: var(--warning-bg); color: var(--warning); }
+.badge-aguardando_decisao { background: rgba(127,90,180,0.12); color: #7F5AB4; }
+.badge-concluida { background: var(--success-bg); color: var(--success); }
+
+/* Badges de urgência */
+.badge-urg-baixa { background: var(--cinza-bg); color: var(--azul-light); }
+.badge-urg-media { background: var(--info-bg); color: var(--info); }
+.badge-urg-alta { background: var(--warning-bg); color: var(--warning); }
+.badge-urg-urgente { background: var(--danger-bg); color: var(--danger); }
+
+/* Badge de tipo decisão */
+.badge-decisao { background: rgba(127,90,180,0.12); color: #7F5AB4; }
+
+/* Card de tarefa */
+.tarefa-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--cinza);
+}
+
+.tarefa-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.tarefa-entrega-atrasada { color: var(--danger); font-weight: 700; }
+
+/* Drag & drop */
+.pipeline-card[draggable="true"] { cursor: grab; }
+.pipeline-card.dragging { opacity: 0.5; }
+.pipeline-body.drag-over {
+  background: rgba(212,98,80,0.06);
+  outline: 2px dashed var(--laranja);
+  outline-offset: -6px;
+}
+
+/* Thread de comentários */
+.comentarios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.comentario {
+  background: var(--cinza-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.comentario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.comentario-autor {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--azul);
+}
+
+.comentario-data { font-size: 10px; color: var(--cinza); }
+
+.comentario-texto { font-size: 13px; color: var(--azul-light); white-space: pre-wrap; }
+
+.comentario-form { display: flex; gap: 8px; }
+.comentario-form input { flex: 1; }
+
+/* Detalhe da tarefa */
+.tarefa-detalhe-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.tarefa-detalhe-item small {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cinza);
+  margin-bottom: 2px;
+}
+
+.tarefa-detalhe-item span { font-size: 13px; color: var(--azul); }
