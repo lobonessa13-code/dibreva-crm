@@ -50,6 +50,7 @@
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" onclick="CRM.switchTab('pipeline')">Pipeline</button>
+      <button class="tab-btn" onclick="CRM.switchTab('comercial')">Comercial</button>
       <button class="tab-btn" onclick="CRM.switchTab('tabela')">Tabela</button>
       <button class="tab-btn" onclick="CRM.switchTab('graficos')">Gráficos</button>
       <button class="tab-btn" onclick="CRM.switchTab('relatorios')">Relatórios</button>
@@ -58,6 +59,55 @@
     <!-- Tab: Pipeline Kanban -->
     <div class="tab-content active" id="tab-pipeline">
       <div class="pipeline" id="pipeline-container"></div>
+    </div>
+
+    <!-- Tab: Comercial (Follow-up de Orçamentos) -->
+    <div class="tab-content" id="tab-comercial">
+
+      <!-- KPIs do Comercial -->
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card">
+          <div class="kpi-label">Orçamentos Aguardando Retorno</div>
+          <div class="kpi-value info" id="com-aguardando">—</div>
+          <div class="kpi-sub" id="com-aguardando-valor"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Com Automação Ativa</div>
+          <div class="kpi-value success" id="com-automacao">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Sem Contato há 7+ dias</div>
+          <div class="kpi-value warning" id="com-sem-contato">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Follow-ups no Mês</div>
+          <div class="kpi-value" id="com-enviados-mes">—</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="panel-header" style="padding: 16px 20px 0;">
+          <h3>Follow-up de Orçamentos Enviados</h3>
+          <p style="color: var(--cinza); font-size: 13px; margin-top: 4px;">
+            Cadência automática via WhatsApp: dia 2 (confirmação), dia 7 (dúvidas), dia 15 (reforço) e dia 30 (último contato). Enviada todo dia às 10h.
+          </p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Condomínio</th>
+              <th>Contato</th>
+              <th>Valor</th>
+              <th>Orçamento Enviado</th>
+              <th>Follow-ups</th>
+              <th>Próximo Passo</th>
+              <th>Automação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="comercial-table-body"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Tab: Tabela -->
@@ -342,13 +392,65 @@
     </div>
   </div>
 
+  <!-- Modal: Enviar Follow-up -->
+  <div class="modal-overlay" id="modal-followup">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Enviar Follow-up via WhatsApp</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-followup')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="followup-lead-id">
+        <div style="background: var(--cinza-bg); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+          <div style="font-weight: 700;" id="followup-condominio"></div>
+          <div style="color: var(--cinza); font-size: 13px;" id="followup-contato"></div>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Mensagem</label>
+          <select class="form-control" id="followup-fase" onchange="CRM.updateFollowupTemplate()">
+            <option value="confirmacao">Confirmação (recebeu o orçamento?)</option>
+            <option value="duvidas">Dúvidas (conseguiu analisar?)</option>
+            <option value="reforco">Reforço (proposta válida + agenda)</option>
+            <option value="fechamento">Fechamento (último contato)</option>
+            <option value="manual">Mensagem livre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mensagem</label>
+          <textarea class="form-control" id="followup-mensagem" rows="10"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-followup')">Cancelar</button>
+        <button class="btn btn-primary" onclick="CRM.enviarFollowup()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Enviar WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Histórico de Follow-ups -->
+  <div class="modal-overlay" id="modal-followup-historico">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="followup-historico-title">Histórico de Follow-ups</h2>
+        <button class="modal-close" onclick="UI.closeModal('modal-followup-historico')">&times;</button>
+      </div>
+      <div class="modal-body" id="followup-historico-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-followup-historico')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/supabase-config.js?v=10"></script>
   <script src="js/auth.js?v=10"></script>
   <script src="js/db.js?v=10"></script>
   <script src="js/ui.js?v=10"></script>
-  <script src="js/nav.js?v=12"></script>
-  <script src="js/crm.js?v=11"></script>
+  <script src="js/nav.js?v=13"></script>
+  <script src="js/crm.js?v=12"></script>
   <script>
     try {
       document.getElementById('sidebar').innerHTML = renderSidebar('crm');

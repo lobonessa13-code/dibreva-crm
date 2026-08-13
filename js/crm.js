@@ -288,14 +288,224 @@ const CRM = {
   // --- Tabs ---
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', ['pipeline','tabela','graficos','relatorios'][i] === tab);
+      btn.classList.toggle('active', ['pipeline','comercial','tabela','graficos','relatorios'][i] === tab);
     });
     document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
 
+    if (tab === 'comercial') this.renderComercial();
     if (tab === 'graficos') this.renderCharts();
     if (tab === 'tabela') this.renderTable();
     if (tab === 'relatorios') this.renderRelatorios();
+  },
+
+  // ===== COMERCIAL (Follow-up de Orçamentos) =====
+
+  followups: [],
+
+  // Cadência automática: mesma regra da Edge Function verificar-followups
+  followupCadencia: [
+    { qtd: 0, diasMinimos: 2,  fase: 'confirmacao', label: 'Confirmação' },
+    { qtd: 1, diasMinimos: 7,  fase: 'duvidas', label: 'Dúvidas' },
+    { qtd: 2, diasMinimos: 15, fase: 'reforco', label: 'Reforço' },
+    { qtd: 3, diasMinimos: 30, fase: 'fechamento', label: 'Fechamento' }
+  ],
+
+  proximoPasso(f) {
+    if (!f.followup_ativo) return { texto: 'Automação pausada', cor: 'var(--cinza)' };
+    const etapa = this.followupCadencia.find(c => c.qtd === (f.qtd_followups_enviados || 0));
+    if (!etapa) return { texto: 'Cadência concluída', cor: 'var(--cinza)' };
+    const diasFaltando = etapa.diasMinimos - f.dias_desde_envio;
+    if (diasFaltando <= 0) return { texto: `${etapa.label} (hoje às 10h)`, cor: 'var(--warning, #D37E53)' };
+    return { texto: `${etapa.label} em ${diasFaltando} dia(s)`, cor: 'var(--cinza-escuro, inherit)' };
+  },
+
+  async renderComercial() {
+    const tbody = document.getElementById('comercial-table-body');
+    try {
+      const [{ data: rows, error: e1 }, { data: kpisArr }, { data: logsMes }] = await Promise.all([
+        sb.from('vw_followup_comercial').select('*'),
+        sb.from('vw_followup_kpis').select('*'),
+        sb.from('followup_log').select('id')
+          .gte('enviado_em', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+          .eq('status', 'enviado')
+      ]);
+      if (e1) throw e1;
+
+      this.followups = rows || [];
+      const kpis = kpisArr?.[0] || {};
+
+      document.getElementById('com-aguardando').textContent = kpis.aguardando_retorno ?? this.followups.length;
+      document.getElementById('com-aguardando-valor').textContent = UI.moeda(kpis.valor_em_aberto || 0);
+      document.getElementById('com-automacao').textContent = kpis.com_automacao_ativa ?? '—';
+      document.getElementById('com-sem-contato').textContent = kpis.sem_contato_7d ?? '—';
+      document.getElementById('com-enviados-mes').textContent = (logsMes || []).length;
+
+      if (this.followups.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Nenhum orçamento aguardando retorno. Leads entram aqui quando o status vira "Orçamento Enviado" com a data de envio preenchida.</p></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = this.followups.map(f => {
+        const passo = this.proximoPasso(f);
+        const ultimoEnvio = f.ultimo_followup_em
+          ? new Date(f.ultimo_followup_em).toLocaleDateString('pt-BR')
+          : 'nunca';
+        return `
+        <tr>
+          <td><strong>${f.condominio}</strong><br><small style="color:var(--cinza);">${f.tipo_servico || ''}</small></td>
+          <td>${f.nome_contato || '—'}<br><small style="color:var(--cinza);">${f.telefone || 'sem telefone'}</small></td>
+          <td>${f.valor_estimado > 0 ? UI.moeda(f.valor_estimado) : '—'}</td>
+          <td>${UI.data ? UI.data(f.data_envio_orcamento) : f.data_envio_orcamento}<br><small style="color:var(--cinza);">há ${f.dias_desde_envio} dia(s)</small></td>
+          <td>${f.qtd_followups_enviados || 0} de 4<br><small style="color:var(--cinza);">último: ${ultimoEnvio}</small></td>
+          <td style="color:${passo.cor};">${passo.texto}</td>
+          <td>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" ${f.followup_ativo ? 'checked' : ''} onchange="CRM.toggleFollowupAuto('${f.lead_id}', this.checked)">
+              <span style="font-size:12px;">${f.followup_ativo ? 'Ativa' : 'Pausada'}</span>
+            </label>
+          </td>
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-sm btn-primary btn-icon" title="Enviar follow-up agora" ${f.telefone ? '' : 'disabled'} onclick="CRM.openFollowup('${f.lead_id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <button class="btn btn-sm btn-secondary btn-icon" title="Histórico de follow-ups" onclick="CRM.openFollowupHistorico('${f.lead_id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch (err) {
+      console.error('Erro ao carregar painel comercial:', err);
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Erro ao carregar. Verifique se a migration de follow-up comercial foi aplicada no Supabase.</p></td></tr>';
+    }
+  },
+
+  followupTemplate(fase, f) {
+    const saudacao = f.nome_contato ? `Olá, ${f.nome_contato}! Tudo bem?` : 'Olá! Tudo bem?';
+    const servico = (f.tipo_servico || 'serviço').toLowerCase();
+    const cond = f.condominio || '';
+    const dataEnvio = f.data_envio_orcamento
+      ? f.data_envio_orcamento.split('-').reverse().join('/')
+      : '';
+    const assinatura = 'DIBREVA, Manutenção e Restauração Predial\n(48) 99635-0627';
+
+    const templates = {
+      confirmacao: `${saudacao}\n\nAqui é da DIBREVA. ${dataEnvio ? `No dia ${dataEnvio} enviamos` : 'Enviamos recentemente'} o orçamento de ${servico} para o ${cond}.\n\nGostaria de confirmar se vocês receberam tudo certinho e se ficou alguma dúvida sobre a proposta.\n\nQualquer coisa, estamos à disposição!\n\n${assinatura}`,
+      duvidas: `${saudacao}\n\nPassando para saber se vocês já conseguiram analisar o orçamento de ${servico} do ${cond}.\n\nSe ajudar, podemos agendar uma conversa para explicar os detalhes da proposta, tirar dúvidas técnicas ou ajustar o escopo conforme a necessidade do condomínio.\n\nFicamos no aguardo!\n\n${assinatura}`,
+      reforco: `${saudacao}\n\nO orçamento de ${servico} do ${cond} segue válido, e podemos revisar etapas, valores ou condições de pagamento se isso ajudar na decisão.\n\nVale lembrar que nossa agenda de obras é organizada por ordem de fechamento, então garantir a data com antecedência evita espera para iniciar o serviço.\n\nQualquer dúvida, é só chamar!\n\n${assinatura}`,
+      fechamento: `${saudacao}\n\nPara não ficarmos insistindo, este é nosso último contato sobre o orçamento de ${servico} do ${cond}.\n\nSe a proposta não seguiu adiante, tudo bem, agradecemos muito a oportunidade. Se puder nos contar o motivo, nos ajuda a melhorar.\n\nE se ainda estiver em análise, seguimos à disposição para conversar e negociar.\n\nUm abraço,\n${assinatura}`,
+      manual: ''
+    };
+    return templates[fase] ?? '';
+  },
+
+  openFollowup(leadId) {
+    const f = this.followups.find(x => x.lead_id === leadId);
+    if (!f) return;
+    document.getElementById('followup-lead-id').value = leadId;
+    document.getElementById('followup-condominio').textContent = f.condominio;
+    document.getElementById('followup-contato').textContent =
+      `${f.nome_contato || 'Sem contato'} · ${f.telefone || 'sem telefone'} · ${f.qtd_followups_enviados || 0} follow-up(s) já enviado(s)`;
+
+    // Sugere a fase da vez conforme a cadência
+    const etapa = this.followupCadencia.find(c => c.qtd === (f.qtd_followups_enviados || 0));
+    document.getElementById('followup-fase').value = etapa ? etapa.fase : 'manual';
+    this.updateFollowupTemplate();
+    UI.openModal('modal-followup');
+  },
+
+  updateFollowupTemplate() {
+    const leadId = document.getElementById('followup-lead-id').value;
+    const f = this.followups.find(x => x.lead_id === leadId);
+    if (!f) return;
+    const fase = document.getElementById('followup-fase').value;
+    document.getElementById('followup-mensagem').value = this.followupTemplate(fase, f);
+  },
+
+  async enviarFollowup() {
+    const leadId = document.getElementById('followup-lead-id').value;
+    const fase = document.getElementById('followup-fase').value;
+    const mensagem = document.getElementById('followup-mensagem').value.trim();
+
+    if (!mensagem) return UI.warning('Mensagem não pode ficar vazia');
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token || SUPABASE_KEY;
+
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enviar-followup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({ lead_id: leadId, fase, mensagem, automatico: false })
+      });
+
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Erro no envio');
+
+      UI.success('Follow-up enviado por WhatsApp!');
+      UI.closeModal('modal-followup');
+      await this.loadData();
+      this.renderComercial();
+      this.renderPipeline();
+    } catch (err) {
+      UI.error('Erro ao enviar: ' + err.message);
+    }
+  },
+
+  async toggleFollowupAuto(leadId, ativo) {
+    try {
+      await DB.update('leads', leadId, { followup_ativo: ativo });
+      UI.success(ativo ? 'Automação reativada para este lead' : 'Automação pausada para este lead');
+      this.renderComercial();
+    } catch (err) {
+      UI.error('Erro ao atualizar: ' + err.message);
+      this.renderComercial();
+    }
+  },
+
+  async openFollowupHistorico(leadId) {
+    const f = this.followups.find(x => x.lead_id === leadId);
+    document.getElementById('followup-historico-title').textContent =
+      `Histórico de Follow-ups · ${f?.condominio || ''}`;
+    const body = document.getElementById('followup-historico-body');
+    body.innerHTML = '<p style="color:var(--cinza);">Carregando...</p>';
+    UI.openModal('modal-followup-historico');
+
+    try {
+      const { data: logs, error } = await sb.from('followup_log')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('enviado_em', { ascending: false });
+      if (error) throw error;
+
+      if (!logs || logs.length === 0) {
+        body.innerHTML = '<div class="empty-state"><p>Nenhum follow-up enviado ainda para este lead.</p></div>';
+        return;
+      }
+
+      const faseLabels = { confirmacao: 'Confirmação', duvidas: 'Dúvidas', reforco: 'Reforço', fechamento: 'Fechamento', manual: 'Manual' };
+      body.innerHTML = logs.map(l => `
+        <div style="border:1px solid var(--borda, #e5e7eb); border-radius:8px; padding:12px 16px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+            <strong>${faseLabels[l.fase] || l.fase} ${l.automatico ? '· automático' : '· manual'}</strong>
+            <span style="color:${l.status === 'enviado' ? 'var(--success, #2D8E5E)' : 'var(--danger, #C43B3B)'}; font-size:13px;">
+              ${l.status === 'enviado' ? 'Enviado' : 'Falhou'} · ${new Date(l.enviado_em).toLocaleString('pt-BR')}
+            </span>
+          </div>
+          <div style="white-space:pre-wrap; font-size:13px; color:var(--cinza-escuro, inherit); background:var(--cinza-bg); border-radius:6px; padding:10px 12px;">${l.mensagem}</div>
+          ${l.erro ? `<div style="color:var(--danger, #C43B3B); font-size:12px; margin-top:6px;">Erro: ${l.erro}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (err) {
+      body.innerHTML = `<div class="empty-state"><p>Erro ao carregar histórico: ${err.message}</p></div>`;
+    }
   },
 
   // --- CRUD ---
