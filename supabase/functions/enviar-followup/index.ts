@@ -100,8 +100,11 @@ async function enviarWhatsApp(numero: string, texto: string): Promise<{ ok: bool
 
   if (!instanceId || !token) return { ok: false, erro: 'ZAPI_INSTANCE_ID ou ZAPI_TOKEN não configurados' }
 
-  const phone = numero.replace(/\D/g, '').replace(/^0+/, '')
-  const fullPhone = phone.startsWith('55') ? phone : `55${phone}`
+  let phone = numero.replace(/\D/g, '').replace(/^0+/, '')
+  if (phone.startsWith('55') && phone.length >= 12) phone = phone.slice(2)
+  // Celulares antigos sem o nono dígito (DDD + 8 dígitos): insere o 9
+  if (phone.length === 10) phone = phone.slice(0, 2) + '9' + phone.slice(2)
+  const fullPhone = `55${phone}`
 
   try {
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`
