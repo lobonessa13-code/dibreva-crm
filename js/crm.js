@@ -383,8 +383,18 @@ const CRM = {
     }
   },
 
+  // "João - sindico" -> "João" · "MICHELINE" -> "Micheline"
+  primeiroNome(nome) {
+    if (!nome) return '';
+    const limpo = nome.split(/[-–·(]/)[0].trim();
+    const primeiro = limpo.split(/\s+/)[0] || '';
+    if (!primeiro) return '';
+    return primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase();
+  },
+
   followupTemplate(fase, f) {
-    const saudacao = f.nome_contato ? `Olá, ${f.nome_contato}! Tudo bem?` : 'Olá! Tudo bem?';
+    const nome = this.primeiroNome(f.nome_contato);
+    const saudacao = nome ? `Olá, ${nome}! Tudo bem?` : 'Olá! Tudo bem?';
     const servico = (f.tipo_servico || 'serviço').toLowerCase();
     const cond = f.condominio || '';
     const dataEnvio = f.data_envio_orcamento

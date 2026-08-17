@@ -23,8 +23,18 @@ function dataBR(iso: string | null): string {
 const ASSINATURA = `DIBREVA, Manutenção e Restauração Predial
 (48) 99635-0627`
 
+// "João - sindico" -> "João" · "MICHELINE" -> "Micheline" · "Rafael Mindset" -> "Rafael"
+function primeiroNome(nome: string | null): string {
+  if (!nome) return ''
+  const limpo = nome.split(/[-–·(]/)[0].trim()
+  const primeiro = limpo.split(/\s+/)[0] || ''
+  if (!primeiro) return ''
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase()
+}
+
 export function gerarMensagem(fase: string, lead: any): string {
-  const saudacao = lead.nome_contato ? `Olá, ${lead.nome_contato}! Tudo bem?` : 'Olá! Tudo bem?'
+  const nome = primeiroNome(lead.nome_contato)
+  const saudacao = nome ? `Olá, ${nome}! Tudo bem?` : 'Olá! Tudo bem?'
   const condominio = lead.condominio || ''
   const servico = (lead.tipo_servico || 'serviço').toLowerCase()
   const dataEnvio = dataBR(lead.data_envio_orcamento)
