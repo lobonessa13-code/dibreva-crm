@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS followup_log (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
 
-  fase TEXT NOT NULL CHECK (fase IN ('confirmacao','duvidas','reforco','fechamento','manual')),
+  fase TEXT NOT NULL CHECK (fase IN ('confirmacao','duvidas','reforco','fechamento','manual','reativacao')),
   canal TEXT NOT NULL DEFAULT 'whatsapp' CHECK (canal IN ('whatsapp')),
   destinatario TEXT NOT NULL,
   mensagem TEXT NOT NULL,

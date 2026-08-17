@@ -9,7 +9,7 @@ import { createAdminClient, corsHeaders, ok, err } from '../_shared/supabase.ts'
 
 interface RequestBody {
   lead_id: string
-  fase: 'confirmacao' | 'duvidas' | 'reforco' | 'fechamento' | 'manual'
+  fase: 'confirmacao' | 'duvidas' | 'reforco' | 'fechamento' | 'reativacao' | 'manual'
   mensagem?: string         // Texto customizado (opcional, sobrescreve o template)
   automatico?: boolean      // true se vem do cron, false se manual
 }
@@ -62,6 +62,21 @@ Vale lembrar que nossa agenda de obras é organizada por ordem de fechamento, en
 
 Qualquer dúvida, é só chamar!
 
+${ASSINATURA}`
+  }
+
+  if (fase === 'reativacao') {
+    return `${saudacao}
+
+Aqui é a Vanessa, da DIBREVA (manutenção e restauração predial).
+
+Há um tempo enviamos um orçamento de ${servico} para o ${condominio} e queria retomar o contato: essa demanda ainda está nos planos do condomínio?
+
+Se sim, atualizo o orçamento sem compromisso, com os valores e condições de hoje. E se surgiu outra necessidade, como pintura, fachada, lavação ou calçadas, também podemos ajudar.
+
+Fico à disposição!
+
+Vanessa Lobo
 ${ASSINATURA}`
   }
 
