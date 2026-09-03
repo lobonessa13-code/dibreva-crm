@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIBREVA - Documentos</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/documentos.css?v=1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <button class="mobile-toggle" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay"></div>
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>Documentos</h1>
+      <div class="page-header-actions docs-novo-group">
+        <button class="btn btn-primary" onclick="DOCS.openNovo('orcamento')">+ Orçamento</button>
+        <button class="btn btn-secondary" onclick="DOCS.openNovo('contrato')">+ Contrato</button>
+        <button class="btn btn-secondary" onclick="DOCS.openNovo('aditivo')">+ Aditivo</button>
+        <button class="btn btn-secondary" onclick="DOCS.openNovo('recibo')">+ Recibo</button>
+      </div>
+    </div>
+
+    <div class="obra-filtro-banner" id="obra-filtro-banner" style="display:none;"></div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Orçamentos no ano</div><div class="kpi-value" id="kpi-orcamentos">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Contratos no ano</div><div class="kpi-value success" id="kpi-contratos">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Orçamentos enviados (aberto)</div><div class="kpi-value warning" id="kpi-abertos">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Recibos emitidos no ano</div><div class="kpi-value" id="kpi-recibos">—</div></div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-card">
+      <div class="table-toolbar filtros-docs">
+        <input type="text" class="search-input" id="search-docs" placeholder="Buscar por número, cliente ou obra..." oninput="DOCS.renderList(1)">
+        <select class="filter-select" onchange="DOCS.setFiltro('filtroTipo', this.value)">
+          <option value="todos">Todos os tipos</option>
+          <option value="orcamento">Orçamentos</option>
+          <option value="contrato">Contratos</option>
+          <option value="aditivo">Aditivos</option>
+          <option value="recibo">Recibos</option>
+        </select>
+        <select class="filter-select" onchange="DOCS.setFiltro('filtroStatus', this.value)">
+          <option value="todos">Todos os status</option>
+          <option value="rascunho">Rascunho</option>
+          <option value="enviado">Enviado</option>
+          <option value="assinado">Assinado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Tipo</th>
+            <th>Documento</th>
+            <th>Cliente / Obra</th>
+            <th>Valor</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="docs-table-body"><tr><td colspan="8"><div class="spinner"></div></td></tr></tbody>
+      </table>
+      <div class="table-pagination" id="docs-pagination"></div>
+    </div>
+
+  </main>
+
+  <!-- Workspace do agente: chat + preview -->
+  <div class="docs-workspace" id="docs-workspace">
+    <section class="chat-panel">
+      <div class="chat-header">
+        <span class="agente-dot" title="Agente de Documentos"></span>
+        <div>
+          <div class="chat-title">Agente de Documentos · <span id="ws-tipo">Orçamento</span></div>
+          <div class="chat-numero" id="ws-numero">Novo</div>
+        </div>
+      </div>
+      <div class="chat-vinculos">
+        <select id="vinc-cliente" title="Cliente cadastrado" onchange="DOCS.mudarVinculo('cliente', this.value)"></select>
+        <select id="vinc-lead" title="Lead do CRM" onchange="DOCS.mudarVinculo('lead', this.value)"></select>
+        <select id="vinc-obra" title="Obra" onchange="DOCS.mudarVinculo('obra', this.value)"></select>
+        <select id="vinc-base" title="Documento base (orçamento para contrato, contrato para aditivo/recibo)" onchange="DOCS.mudarVinculo('base', this.value)"></select>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-bar">
+        <textarea id="chat-input" rows="1" placeholder="Descreva o documento como falaria comigo no terminal..."></textarea>
+        <button class="chat-send" id="chat-send" onclick="DOCS.enviar()" title="Enviar (Enter)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="chat-hint">Enter envia, Shift+Enter quebra linha. Vincule cliente, lead, obra ou documento base para o agente puxar os dados.</div>
+    </section>
+
+    <section class="preview-panel">
+      <div class="preview-toolbar">
+        <button class="btn btn-primary" id="btn-salvar" onclick="DOCS.salvar()">Salvar</button>
+        <select class="form-control" id="ws-status" onchange="DOCS.mudarStatus()">
+          <option value="rascunho">Rascunho</option>
+          <option value="enviado">Enviado</option>
+          <option value="assinado">Assinado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <button class="btn btn-secondary" onclick="DOCS.imprimir()">Imprimir / PDF</button>
+        <button class="btn btn-secondary" onclick="DOCS.baixarHTML()">Baixar HTML</button>
+        <span class="spacer"></span>
+        <span class="preview-info" id="preview-info"></span>
+        <button class="btn btn-secondary" onclick="DOCS.fecharWorkspace()">Fechar</button>
+      </div>
+      <div class="preview-body">
+        <iframe id="preview-frame" title="Preview do documento" style="display:none;"></iframe>
+        <div class="preview-vazio" id="preview-vazio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <h3>O documento aparece aqui</h3>
+          <p>Converse com o agente à esquerda. Quando ele tiver os dados, o A4 no padrão DIBREVA é renderizado automaticamente. Depois é só salvar, imprimir em PDF ou baixar.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/supabase-config.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/db.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/nav.js?v=14"></script>
+  <script src="js/ia.js?v=1"></script>
+  <script src="js/doc-templates.js?v=1"></script>
+  <script src="js/documentos.js?v=1"></script>
+  <script>
+    try {
+      document.getElementById('sidebar').innerHTML = renderSidebar('documentos');
+    } catch (e) { console.error('Erro ao renderizar sidebar:', e); }
+
+    Auth.guard().then(ok => {
+      if (!ok) return;
+      DOCS.init();
+    }).catch(e => console.error('Erro em Auth.guard:', e));
+  </script>
+</body>
+</html>
