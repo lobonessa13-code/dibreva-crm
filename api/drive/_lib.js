@@ -13,7 +13,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis
 const CHAVE_INTEGRACAO = 'google_drive';
 
 function env(nome) {
-  const v = process.env[nome];
+  const v = (process.env[nome] || '').trim();
   if (!v) throw new Error(`Variável de ambiente ${nome} não configurada na Vercel`);
   return v;
 }
@@ -31,7 +31,11 @@ async function exigirUsuario(req) {
   if (!token) { const e = new Error('Não autenticado'); e.status = 401; throw e; }
   const sb = supabaseAdmin();
   const { data, error } = await sb.auth.getUser(token);
-  if (error || !data?.user) { const e = new Error('Sessão inválida. Faça login de novo no CRM.'); e.status = 401; throw e; }
+  if (error || !data?.user) {
+    console.error('Falha ao validar sessão:', error);
+    const motivo = error?.message ? ` (${error.message})` : '';
+    const e = new Error(`Sessão inválida. Faça login de novo no CRM.${motivo}`); e.status = 401; throw e;
+  }
   return { user: data.user, sb };
 }
 
