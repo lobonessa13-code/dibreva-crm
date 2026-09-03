@@ -18,6 +18,9 @@ function env(nome) {
   return v;
 }
 
+// Chave pública do CRM (a mesma de js/supabase-config.js): serve só para validar a sessão do usuário
+const PUBLISHABLE_KEY = (process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_29mOMtIRKUJWI5ltD_GLZg_G7kMVqTE').trim();
+
 function supabaseAdmin() {
   return createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -29,8 +32,9 @@ async function exigirUsuario(req) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) { const e = new Error('Não autenticado'); e.status = 401; throw e; }
+  const publico = createClient(env('SUPABASE_URL'), PUBLISHABLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { data, error } = await publico.auth.getUser(token);
   const sb = supabaseAdmin();
-  const { data, error } = await sb.auth.getUser(token);
   if (error || !data?.user) {
     console.error('Falha ao validar sessão:', error);
     const motivo = error?.message ? ` (${error.message})` : '';
@@ -93,7 +97,7 @@ async function emailDoToken(accessToken) {
 // ---- integração persistida (tabela integracoes, só service role) ----
 async function lerIntegracao(sb) {
   const { data, error } = await sb.from('integracoes').select('valor').eq('chave', CHAVE_INTEGRACAO).maybeSingle();
-  if (error) throw new Error(`Erro ao ler integração: ${error.message}`);
+  if (error) throw new Error(`Erro ao ler integração (confira SUPABASE_SERVICE_ROLE_KEY na Vercel): ${error.message}`);
   return data?.valor || null;
 }
 
