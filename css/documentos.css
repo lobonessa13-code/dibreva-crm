@@ -169,3 +169,19 @@ body.workspace-open { overflow: hidden; }
   .docs-workspace { left: 0; grid-template-columns: 1fr; grid-template-rows: 55vh 45vh; }
   .chat-panel { border-right: none; border-bottom: 1px solid var(--cinza-light); }
 }
+
+/* ---------- Editor manual (sem IA) ---------- */
+.modal-editor { max-width: 920px; }
+.modal-editor .modal-header h2 { margin-bottom: 2px; }
+.editor-sub { font-size: 12px; color: var(--cinza); font-weight: 400; }
+.editor-body { max-height: 70vh; overflow-y: auto; }
+.editor-numero { font-size: 13px; color: var(--cinza); margin-bottom: 14px; }
+.editor-grupo { border: 1px solid var(--cinza-light); border-radius: var(--radius-sm); padding: 12px 14px 4px; margin: 0 0 14px; }
+.editor-grupo legend { font-family: var(--font-heading); font-size: 12px; font-weight: 700; color: var(--laranja); letter-spacing: 1px; text-transform: uppercase; padding: 0 6px; }
+.editor-item { background: #FAFBFB; border: 1px solid var(--cinza-bg); border-radius: var(--radius-sm); padding: 10px 12px 2px; margin-bottom: 10px; }
+.editor-item-header { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-heading); font-size: 12px; font-weight: 700; color: var(--azul); margin-bottom: 8px; }
+.editor-lista > .btn { margin-bottom: 10px; }
+.editor-dica { display: block; font-size: 11px; color: var(--cinza); margin: -2px 0 6px; }
+.editor-check label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.editor-body .form-group { margin-bottom: 12px; }
+.editor-body textarea.form-control { font-family: var(--font-body); line-height: 1.45; }

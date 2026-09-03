@@ -366,8 +366,15 @@ const DOCS = {
       if (!s.messages.length && s.atual.dados && Object.keys(s.atual.dados).length) {
         s.messages.push({ role: 'user', content: `Dados atuais do documento ${s.atual.numero} (JSON). Use como base para qualquer alteração e regenere com a ferramenta correspondente:\n${JSON.stringify(s.atual.dados)}` });
         s.messages.push({ role: 'assistant', content: [{ type: 'text', text: 'Entendido, tenho os dados atuais do documento. O que devo ajustar?' }] });
+        s.atual.editadoManualmente = false;
       }
-      s.messages.push({ role: 'user', content: userText });
+      // Se a Vanessa editou à mão depois da última conversa, o agente precisa dos dados novos
+      let conteudo = userText;
+      if (s.atual.editadoManualmente && s.atual.dados) {
+        conteudo = `(Editei o documento manualmente. Dados atuais, use-os como base:\n${JSON.stringify(s.atual.dados)})\n\n${userText}`;
+        s.atual.editadoManualmente = false;
+      }
+      s.messages.push({ role: 'user', content: conteudo });
 
       for (let volta = 0; volta < 8; volta++) {
         const resp = await IA.chat({
@@ -698,6 +705,179 @@ DATA DE HOJE: ${hoje}. Documento em edição: ${DocTemplates.LABELS[a.tipo]}${a.
 
   marcarNaoSalvo(on) {
     document.getElementById('btn-salvar').classList.toggle('pendente', !!on);
+  },
+
+  // ===============================================================
+  // EDIÇÃO MANUAL (sem IA): formulário gerado a partir do schema da ferramenta
+  // ===============================================================
+  CAMPOS_LONGOS: ['escopo_geral', 'descricao_intro', 'observacao', 'observacoes', 'pagamento_texto', 'prazo_texto', 'garantia_texto', 'objeto_resumo', 'objeto_original_resumo', 'parcela_descricao', 'entrada_condicao'],
+  ROTULOS: {
+    cliente_nome: 'Cliente', cliente_tipo: 'Tipo de cliente', uf: 'UF', subtitulo_capa: 'Subtítulo da capa', tipo_servico: 'Tipo de serviço',
+    tipo_servico_detalhe: 'Detalhe do tipo de serviço', abrangencia: 'Abrangência', abrangencia_detalhe: 'Detalhe da abrangência', modalidade: 'Modalidade',
+    escopo_geral: 'Escopo geral', descricao_intro: 'Introdução da descrição', etapas: 'Etapas', itens: 'Itens (um por linha)', observacao: 'Observação da etapa',
+    inclui_pintura: 'Inclui pintura', garantia_texto: 'Texto de garantia', observacoes: 'Observações (uma por linha)', valor_total: 'Valor total (R$)',
+    entrada_valor: 'Entrada (R$)', entrada_percentual: 'Entrada (%)', entrada_descricao: 'Descrição da entrada', opcoes_parcelamento: 'Opções de parcelamento',
+    parcelas: 'Parcelas', descricao: 'Descrição', prazo_dias_uteis: 'Prazo (dias úteis)', prazo_detalhe: 'Detalhe do prazo', validade_dias: 'Validade (dias)',
+    contratante: 'Contratante', pagador: 'Pagador', nome: 'Nome', documento_tipo: 'Tipo de documento', documento: 'CNPJ / CPF', endereco: 'Endereço', cep: 'CEP',
+    bairro: 'Bairro', cidade_uf: 'Cidade/UF', representante_nome: 'Representante', representante_cargo: 'Cargo do representante', representante_cpf: 'CPF do representante',
+    local_obra: 'Local da obra', objeto_resumo: 'Objeto (resumo)', grupos_servicos: 'Grupos de serviços', titulo: 'Título', data_inicio: 'Data de início',
+    data_assinatura: 'Data de assinatura', cidade_assinatura: 'Cidade de assinatura', num_parcelas: 'Número de parcelas', primeira_parcela_data: 'Data da 1ª parcela',
+    forma_pagamento: 'Forma de pagamento', fornece_material: 'DIBREVA fornece material', carga_horaria: 'Carga horária', seg_qui: 'Segunda a quinta', sexta: 'Sexta-feira',
+    multa_percentual: 'Multa (%)', garantia_meses: 'Garantia (meses)', ordinal: 'Nº do aditivo (1, 2, 3...)', contrato_data: 'Data do contrato original',
+    contrato_numero: 'Nº do contrato', objeto_original_resumo: 'Objeto original (resumo)', servicos_originais: 'Serviços originais', novos_servicos: 'Novos serviços',
+    valor_aditivo: 'Valor do aditivo (R$)', pagamento_texto: 'Texto do pagamento', label: 'Rótulo', valor: 'Valor (R$)', data: 'Data', data_emissao: 'Data de emissão',
+    data_pagamento: 'Data do pagamento', servico_descricao: 'Descrição do serviço', parcela_descricao: 'Referente a (parcela)', cidade: 'Cidade',
+  },
+
+  ROTULOS_ITEM: { etapas: 'Etapa', opcoes_parcelamento: 'Opção', grupos_servicos: 'Grupo', servicos_originais: 'Serviço original', novos_servicos: 'Novo serviço', parcelas: 'Parcela' },
+
+  rotulo(chave) {
+    return this.ROTULOS[chave] || chave.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  },
+
+  schemaDoTipo(tipo) {
+    const t = this.tools().find(x => x.name === `gerar_${tipo}`);
+    return t ? t.input_schema : { type: 'object', properties: {} };
+  },
+
+  abrirEditor() {
+    const a = this.state.atual;
+    if (!a?.dados) { UI.warning('Gere o documento no chat antes de editar.'); return; }
+    if (this.state.busy) { UI.warning('Aguarde o agente terminar.'); return; }
+    this.state.edicao = JSON.parse(JSON.stringify(a.dados));
+    this.renderEditor();
+    UI.openModal('modal-editar');
+  },
+
+  renderEditor() {
+    const a = this.state.atual;
+    const schema = this.schemaDoTipo(a.tipo);
+    const body = document.getElementById('editor-body');
+    body.innerHTML = `<div class="editor-numero">Número: <strong>${a.numero || 'atribuído ao salvar'}</strong></div>` +
+      this.campoObjeto(schema, this.state.edicao, []);
+  },
+
+  /** Renderiza os campos de um objeto conforme o schema (inclui chaves extras presentes nos dados) */
+  campoObjeto(schema, valor, caminho) {
+    const props = schema.properties || {};
+    const chaves = [...Object.keys(props), ...Object.keys(valor || {}).filter(k => !(k in props) && k !== 'numero')];
+    return chaves.map(k => this.campo(k, props[k] || this.inferirSchema(valor?.[k]), valor?.[k], [...caminho, k])).join('');
+  },
+
+  inferirSchema(v) {
+    if (Array.isArray(v)) return { type: 'array', items: typeof v[0] === 'object' ? this.inferirSchema(v[0]) : { type: 'string' } };
+    if (v && typeof v === 'object') return { type: 'object', properties: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, this.inferirSchema(x)])) };
+    if (typeof v === 'number') return { type: 'number' };
+    if (typeof v === 'boolean') return { type: 'boolean' };
+    return { type: 'string' };
+  },
+
+  campo(chave, sch, valor, caminho) {
+    const path = caminho.join('.');
+    const label = this.rotulo(chave);
+    const dica = sch.description ? `<small class="editor-dica">${this.md(sch.description)}</small>` : '';
+    const tipo = sch.type;
+    const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+    if (tipo === 'object') {
+      return `<fieldset class="editor-grupo"><legend>${label}</legend>${this.campoObjeto(sch, valor || {}, caminho)}</fieldset>`;
+    }
+    if (tipo === 'array') {
+      const itemSch = sch.items || { type: 'string' };
+      if (itemSch.type === 'object') {
+        const lista = Array.isArray(valor) ? valor : [];
+        return `<fieldset class="editor-grupo editor-lista"><legend>${label}</legend>${dica}
+          ${lista.map((item, i) => `<div class="editor-item">
+            <div class="editor-item-header"><span>${this.ROTULOS_ITEM[chave] || label} ${i + 1}</span>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="DOCS.removerItem('${path}', ${i})">Remover</button></div>
+            ${this.campoObjeto(itemSch, item, [...caminho, String(i)])}
+          </div>`).join('')}
+          <button type="button" class="btn btn-sm btn-secondary" onclick="DOCS.adicionarItem('${path}')">+ Adicionar</button>
+        </fieldset>`;
+      }
+      const linhas = Array.isArray(valor) ? valor.join('\n') : '';
+      return `<div class="form-group"><label>${label}</label>${dica}
+        <textarea class="form-control" rows="${Math.min(12, Math.max(3, (valor || []).length + 1))}" data-path="${path}" data-type="lista" oninput="DOCS.registrarEdicao(this)">${esc(linhas)}</textarea></div>`;
+    }
+    if (tipo === 'boolean') {
+      return `<div class="form-group editor-check"><label><input type="checkbox" data-path="${path}" data-type="boolean" ${valor ? 'checked' : ''} onchange="DOCS.registrarEdicao(this)"> ${label}</label>${dica}</div>`;
+    }
+    if (sch.enum) {
+      return `<div class="form-group"><label>${label}</label>${dica}
+        <select class="form-control" data-path="${path}" data-type="string" onchange="DOCS.registrarEdicao(this)">
+          ${sch.enum.map(o => `<option value="${o}" ${o === valor ? 'selected' : ''}>${o}</option>`).join('')}</select></div>`;
+    }
+    if (tipo === 'number' || tipo === 'integer') {
+      return `<div class="form-group"><label>${label}</label>${dica}
+        <input type="number" class="form-control" step="${tipo === 'integer' ? 1 : 0.01}" data-path="${path}" data-type="number" value="${esc(valor)}" oninput="DOCS.registrarEdicao(this)"></div>`;
+    }
+    const longo = this.CAMPOS_LONGOS.includes(chave) || String(valor || '').length > 90;
+    const ehData = /AAAA-MM-DD/.test(sch.description || '') || /^\d{4}-\d{2}-\d{2}$/.test(String(valor || ''));
+    if (ehData) {
+      return `<div class="form-group"><label>${label}</label>${dica}
+        <input type="date" class="form-control" data-path="${path}" data-type="string" value="${esc(valor)}" oninput="DOCS.registrarEdicao(this)"></div>`;
+    }
+    if (longo) {
+      return `<div class="form-group"><label>${label}</label>${dica}
+        <textarea class="form-control" rows="3" data-path="${path}" data-type="string" oninput="DOCS.registrarEdicao(this)">${esc(valor)}</textarea></div>`;
+    }
+    return `<div class="form-group"><label>${label}</label>${dica}
+      <input type="text" class="form-control" data-path="${path}" data-type="string" value="${esc(valor)}" oninput="DOCS.registrarEdicao(this)"></div>`;
+  },
+
+  /** Lê/escreve num caminho "a.b.0.c" da cópia em edição */
+  noCaminho(path, criar = false) {
+    const partes = path.split('.');
+    let obj = this.state.edicao;
+    for (let i = 0; i < partes.length - 1; i++) {
+      const p = partes[i];
+      if (obj[p] === undefined || obj[p] === null) {
+        if (!criar) return [null, null];
+        obj[p] = /^\d+$/.test(partes[i + 1]) ? [] : {};
+      }
+      obj = obj[p];
+    }
+    return [obj, partes[partes.length - 1]];
+  },
+
+  registrarEdicao(el) {
+    const [obj, chave] = this.noCaminho(el.dataset.path, true);
+    if (!obj) return;
+    const t = el.dataset.type;
+    if (t === 'lista') obj[chave] = el.value.split('\n').map(s => s.trim()).filter(Boolean);
+    else if (t === 'boolean') obj[chave] = el.checked;
+    else if (t === 'number') obj[chave] = el.value === '' ? null : Number(el.value);
+    else obj[chave] = el.value;
+  },
+
+  adicionarItem(path) {
+    const [obj, chave] = this.noCaminho(path, true);
+    if (!obj) return;
+    if (!Array.isArray(obj[chave])) obj[chave] = [];
+    const modelo = obj[chave][obj[chave].length - 1];
+    const novo = modelo && typeof modelo === 'object'
+      ? Object.fromEntries(Object.entries(modelo).map(([k, v]) => [k, Array.isArray(v) ? [] : typeof v === 'number' ? 0 : typeof v === 'boolean' ? false : '']))
+      : {};
+    obj[chave].push(novo);
+    this.renderEditor();
+  },
+
+  removerItem(path, indice) {
+    const [obj, chave] = this.noCaminho(path);
+    if (!obj || !Array.isArray(obj[chave])) return;
+    obj[chave].splice(indice, 1);
+    this.renderEditor();
+  },
+
+  async aplicarEdicao() {
+    const a = this.state.atual;
+    if (!a || !this.state.edicao) return;
+    a.dados = { ...this.state.edicao, numero: a.numero || this.numeroProvisorio(a.tipo) };
+    a.editadoManualmente = true;
+    UI.closeModal('modal-editar');
+    await this.renderPreview();
+    this.marcarNaoSalvo(true);
+    this.addMsg('system', 'Documento regerado com a edição manual (sem uso da IA).', false);
   },
 
   // ===============================================================

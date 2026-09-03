@@ -3,7 +3,9 @@
 // Mesmo padrão usado pelo antigo módulo de Vistoria.
 
 const IA = {
-  MODEL: 'claude-opus-5',
+  // Sonnet 5: cerca de 40% do custo do Opus 5, suficiente para preencher os modelos.
+  // Para trocar, basta alterar aqui (ex.: 'claude-opus-5').
+  MODEL: 'claude-sonnet-5',
   STORAGE_KEY: 'dibreva_claude_key',
   ENDPOINT: 'https://api.anthropic.com/v1/messages',
 

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/documentos.css?v=1">
+  <link rel="stylesheet" href="css/documentos.css?v=2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -115,6 +115,7 @@
           <option value="assinado">Assinado</option>
           <option value="cancelado">Cancelado</option>
         </select>
+        <button class="btn btn-secondary" id="btn-editar" onclick="DOCS.abrirEditor()" title="Corrigir valores, itens e textos sem usar a IA (sem custo)">Editar dados</button>
         <button class="btn btn-secondary" onclick="DOCS.imprimir()">Imprimir / PDF</button>
         <button class="btn btn-secondary" onclick="DOCS.baixarHTML()">Baixar HTML</button>
         <span class="spacer"></span>
@@ -132,14 +133,32 @@
     </section>
   </div>
 
+  <!-- Modal: edição manual dos dados (sem IA) -->
+  <div class="modal-overlay" id="modal-editar">
+    <div class="modal modal-editor">
+      <div class="modal-header">
+        <div>
+          <h2>Editar dados do documento</h2>
+          <small class="editor-sub">Correções diretas, sem chamar a IA. O documento é regerado no padrão ao aplicar.</small>
+        </div>
+        <button class="modal-close" onclick="UI.closeModal('modal-editar')">&times;</button>
+      </div>
+      <div class="modal-body editor-body" id="editor-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('modal-editar')">Cancelar</button>
+        <button class="btn btn-primary" onclick="DOCS.aplicarEdicao()">Aplicar e regerar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/supabase-config.js?v=10"></script>
   <script src="js/auth.js?v=10"></script>
   <script src="js/db.js?v=10"></script>
   <script src="js/ui.js?v=10"></script>
   <script src="js/nav.js?v=14"></script>
-  <script src="js/ia.js?v=1"></script>
+  <script src="js/ia.js?v=2"></script>
   <script src="js/doc-templates.js?v=1"></script>
-  <script src="js/documentos.js?v=1"></script>
+  <script src="js/documentos.js?v=2"></script>
   <script>
     try {
       document.getElementById('sidebar').innerHTML = renderSidebar('documentos');

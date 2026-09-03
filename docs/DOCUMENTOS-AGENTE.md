@@ -8,7 +8,7 @@ Gera **orçamentos, contratos, aditivos e recibos** dentro do CRM, por conversa 
 Vanessa descreve o pedido no chat
         │
         ▼
-Agente (Claude, claude-opus-5) ── pergunta o que falta
+Agente (Claude, claude-sonnet-5) ── pergunta o que falta
         │                          busca cliente / obra / lead / documento base no Supabase
         ▼
 Ferramenta gerar_* recebe DADOS ESTRUTURADOS (JSON)
@@ -66,6 +66,10 @@ Regras que o agente segue (mesmas das memórias do terminal): itens de serviço 
 
 `DocTemplates.renderAsync` mede cada bloco num iframe oculto (mesmo CSS, fontes carregadas), distribui os blocos pelas páginas com as alturas reais e depois ajusta: página apertada recebe `.compacto` / `.compacto2`; página de etapas com sobra grande recebe `.folgada`. O HTML baixado já vem paginado e pode ser conferido com `DIBREVA/scripts/validar-documento.js`.
 
+## Edição manual (sem IA)
+
+Botão **Editar dados** na barra do preview abre um formulário gerado a partir do `input_schema` da ferramenta do tipo (campos, listas de itens, parcelas etc.). Ao aplicar, o documento é regerado pelo template sem chamar a API. Se depois disso a Vanessa voltar a conversar com o agente, os dados editados são enviados junto da próxima mensagem.
+
 ## Custo
 
-Cada geração usa por volta de 8 a 12 mil tokens de entrada e 2 a 4 mil de saída no Opus 5 (aprox. US$ 0,10 a 0,15 por documento). O prompt base tem cache ativado.
+Modelo padrão `claude-sonnet-5` (definido em `js/ia.js`). Cada geração ou alteração via chat usa por volta de 8 a 12 mil tokens de entrada e 2 a 4 mil de saída (aprox. US$ 0,03 a 0,06 por chamada). Edições manuais custam zero. O prompt base tem cache ativado.
