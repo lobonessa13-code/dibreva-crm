@@ -97,7 +97,10 @@ async function emailDoToken(accessToken) {
 // ---- integração persistida (tabela integracoes, só service role) ----
 async function lerIntegracao(sb) {
   const { data, error } = await sb.from('integracoes').select('valor').eq('chave', CHAVE_INTEGRACAO).maybeSingle();
-  if (error) throw new Error(`Erro ao ler integração (confira SUPABASE_SERVICE_ROLE_KEY na Vercel): ${error.message}`);
+  if (error) {
+    const k = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    throw new Error(`Erro ao ler integração (confira SUPABASE_SERVICE_ROLE_KEY na Vercel: valor atual começa com "${k.slice(0, 6)}" e tem ${k.length} caracteres; o esperado começa com "eyJhbG" e tem mais de 200): ${error.message}`);
+  }
   return data?.valor || null;
 }
 
