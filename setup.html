@@ -46,6 +46,26 @@
       </div>
     </div>
 
+    <!-- Google Drive -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <h3>Google Drive (publicação de documentos)</h3>
+        <span class="badge" id="drive-badge" style="display:none;">—</span>
+      </div>
+      <div class="panel-body">
+        <p style="color: var(--cinza); margin-bottom: 16px; font-size: 14px;">
+          Orçamentos marcados como <strong>Enviado</strong> e contratos/aditivos marcados como <strong>Assinado</strong> viram PDF e sobem
+          automaticamente para <code>DIBREVA/01 - ADMINISTRATIVO/...</code> no Drive da conta conectada.
+          Conecte com <strong>dibrevaltda@gmail.com</strong>.
+        </p>
+        <div id="drive-status" style="font-size: 14px; margin-bottom: 12px; color: var(--azul);">Verificando conexão...</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" id="btn-drive-conectar" onclick="conectarDrive()">Conectar Google Drive</button>
+          <button class="btn btn-secondary" id="btn-drive-desconectar" onclick="desconectarDrive()" style="display:none;">Desconectar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Conexão -->
     <div class="panel" style="margin-bottom: 24px;">
       <div class="panel-header">
@@ -114,6 +134,7 @@
   <script src="js/db.js?v=10"></script>
   <script src="js/ui.js?v=10"></script>
   <script src="js/nav.js?v=14"></script>
+  <script src="js/drive.js?v=1"></script>
   <script>
     try {
       document.getElementById('sidebar').innerHTML = renderSidebar('setup');
@@ -130,7 +151,41 @@
         badge.className = 'badge badge-aprovado';
         badge.style.display = '';
       }
+      carregarStatusDrive();
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('drive') === 'conectado') UI.success(`Google Drive conectado${params.get('email') ? ' como ' + params.get('email') : ''}!`);
+      if (params.get('drive') === 'erro') UI.error('Falha ao conectar o Drive: ' + (params.get('motivo') || 'erro desconhecido'));
+      if (params.get('drive')) history.replaceState(null, '', 'setup.html');
     }).catch(e => console.error('Erro em Auth.guard:', e));
+
+    async function carregarStatusDrive() {
+      const st = document.getElementById('drive-status');
+      const badge = document.getElementById('drive-badge');
+      try {
+        const s = await Drive.status();
+        if (s.conectado) {
+          st.innerHTML = `Conectado como <strong>${s.email || 'conta Google'}</strong>${s.connected_at ? ` desde ${UI.data(s.connected_at)}` : ''}.`;
+          badge.textContent = 'Conectado'; badge.className = 'badge badge-aprovado'; badge.style.display = '';
+          document.getElementById('btn-drive-conectar').textContent = 'Reconectar';
+          document.getElementById('btn-drive-desconectar').style.display = '';
+        } else {
+          st.textContent = 'Drive ainda não conectado.';
+          badge.textContent = 'Desconectado'; badge.className = 'badge badge-pendente'; badge.style.display = '';
+        }
+      } catch (e) {
+        console.error('Erro ao consultar status do Drive:', e);
+        st.innerHTML = `<span style="color:var(--danger);">${e.message}</span>`;
+      }
+    }
+
+    async function conectarDrive() {
+      try { await Drive.conectar(); } catch (e) { UI.error(e.message); }
+    }
+
+    async function desconectarDrive() {
+      if (!await UI.confirm('Desconectar o Google Drive? Os documentos deixam de ser publicados até reconectar.')) return;
+      try { await Drive.desconectar(); UI.success('Drive desconectado.'); carregarStatusDrive(); } catch (e) { UI.error(e.message); }
+    }
 
     function salvarChaveClaude() {
       const key = document.getElementById('input-claude-key').value.trim();

@@ -151,6 +151,9 @@ const DOCS = {
               <button class="btn btn-sm btn-primary btn-icon" title="Abrir no agente" onclick="DOCS.abrir('${d.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
+              ${d.drive_url ? `<a class="btn btn-sm btn-secondary btn-icon" title="Abrir no Google Drive (publicado ${UI.data(d.publicado_em)})" href="${d.drive_url}" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </a>` : ''}
               <button class="btn btn-sm btn-secondary btn-icon" title="Imprimir / PDF" onclick="DOCS.imprimirId('${d.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               </button>
@@ -237,7 +240,14 @@ const DOCS = {
     document.getElementById('ws-numero').textContent = a.numero || 'Novo';
     document.getElementById('ws-status').value = a.status || 'rascunho';
     this.renderVinculos();
+    this.atualizarLinkDrive();
     document.getElementById('chat-input').focus();
+  },
+
+  atualizarLinkDrive() {
+    const a = this.state.atual;
+    const link = document.getElementById('link-drive');
+    if (a?.drive_url) { link.href = a.drive_url; link.style.display = ''; } else { link.style.display = 'none'; }
   },
 
   fecharWorkspace() {
@@ -912,6 +922,7 @@ DATA DE HOJE: ${hoje}. Documento em edição: ${DocTemplates.LABELS[a.tipo]}${a.
       if (a.id) salvo = await DB.update('documentos', a.id, registro);
       else salvo = await DB.create('documentos', registro);
       a.id = salvo.id;
+      const statusAnterior = a.status;
       a.status = salvo.status;
       history.replaceState(null, '', `documentos.html?id=${a.id}`);
       this.marcarNaoSalvo(false);
@@ -921,6 +932,11 @@ DATA DE HOJE: ${hoje}. Documento em edição: ${DocTemplates.LABELS[a.tipo]}${a.
       this.renderKPIs();
       this.renderList();
       this.renderVinculos();
+      // Publicação automática no Drive: orçamento Enviado, contrato/aditivo Assinado
+      const gatilho = { orcamento: 'enviado', contrato: 'assinado', aditivo: 'assinado' }[a.tipo];
+      if (gatilho && salvo.status === gatilho && (statusAnterior !== gatilho || !a.drive_url)) {
+        await this.publicarNoDrive(true);
+      }
     } catch (error) {
       console.error('Erro ao salvar documento:', error);
       UI.error('Erro ao salvar: ' + error.message);
@@ -960,8 +976,37 @@ DATA DE HOJE: ${hoje}. Documento em edição: ${DocTemplates.LABELS[a.tipo]}${a.
   async mudarStatus() {
     const a = this.state.atual;
     if (!a) return;
-    a.status = document.getElementById('ws-status').value;
     if (a.id) await this.salvar();
+    else a.status = document.getElementById('ws-status').value;
+  },
+
+  /** Gera o PDF no servidor e sobe para o Drive da DIBREVA (pasta do cliente) */
+  async publicarNoDrive(automatico = false) {
+    const a = this.state.atual;
+    if (!a?.dados) { UI.warning('Gere o documento antes de enviar ao Drive.'); return; }
+    if (!a.id) { UI.warning('Salve o documento antes de enviar ao Drive.'); return; }
+    if (!a.html) await this.renderPreview();
+    const btn = document.getElementById('btn-drive');
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Gerando PDF e enviando...';
+    this.addMsg('system', automatico ? 'Publicando no Google Drive (PDF + HTML)...' : 'Enviando ao Google Drive...', false);
+    try {
+      const r = await Drive.publicar(a.id, a.html);
+      a.drive_url = r.url;
+      a.drive_pasta_url = r.pasta;
+      a.publicado_em = new Date().toISOString();
+      this.atualizarLinkDrive();
+      this.addMsg('system', `Publicado no Drive: ${r.caminho}`, false);
+      UI.success('PDF publicado no Google Drive.');
+      await this.loadList();
+      this.renderList();
+    } catch (error) {
+      console.error('Erro ao publicar no Drive:', error);
+      this.addMsg('system', `Falha ao publicar no Drive: ${error.message}`, false);
+      UI.error(error.message);
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
   },
 
   imprimir() {

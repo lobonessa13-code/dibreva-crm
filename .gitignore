@@ -1,2 +1,6 @@
+node_modules/
+.vercel/
+.env
+.env.local
 .DS_Store
-teste.html
+supabase/.temp/

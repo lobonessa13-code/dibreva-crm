@@ -1,7 +1,10 @@
 {
   "cleanUrls": false,
   "trailingSlash": false,
-  "routes": [
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
+  "functions": {
+    "api/drive/publicar.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 }

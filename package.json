@@ -1,0 +1,14 @@
+{
+  "name": "dibreva-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DIBREVA CRM (site estático + funções serverless na Vercel)",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^133.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "puppeteer-core": "^24.4.0"
+  }
+}
