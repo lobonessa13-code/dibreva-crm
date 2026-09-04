@@ -70,6 +70,23 @@ Regras que o agente segue (mesmas das memórias do terminal): itens de serviço 
 
 Botão **Editar dados** na barra do preview abre um formulário gerado a partir do `input_schema` da ferramenta do tipo (campos, listas de itens, parcelas etc.). Ao aplicar, o documento é regerado pelo template sem chamar a API. Se depois disso a Vanessa voltar a conversar com o agente, os dados editados são enviados junto da próxima mensagem.
 
+## Publicação no Google Drive
+
+Funções serverless na Vercel (`api/drive/*`, Node 22, `@sparticuz/chromium` + `puppeteer-core`):
+
+| Rota | Papel |
+|---|---|
+| `GET /api/drive/auth` | Gera a URL de autorização do Google (exige login do CRM) |
+| `GET /api/drive/callback` | Recebe o código, guarda o refresh token em `integracoes` (só service role) |
+| `GET/DELETE /api/drive/status` | Situação da conexão / desconectar |
+| `POST /api/drive/publicar` | Recebe `{documento_id, html}`, gera o PDF com Chrome headless, cria/reaproveita a pasta do cliente e sobe PDF + HTML |
+
+- **Gatilhos:** orçamento ao virar **Enviado**; contrato e aditivo ao virar **Assinado**; botão "Enviar ao Drive" a qualquer momento. Republicar atualiza os mesmos arquivos (ids guardados em `drive_pdf_id` / `drive_html_id`).
+- **Árvore:** `DIBREVA/01 - ADMINISTRATIVO/{01 - ORCAMENTOS | 02 - CONTRATOS | 03 - ADITIVO | 04 - RECIBOS}/{N - ANO}/{Cliente}/`. Pasta do ano é achada por regex (`1 - 2026`, `2 - 2025`...). Pasta do cliente: busca exata, depois sem acentos/maiúsculas, depois por nome-chave (ignora Residencial, Edifício, EDF, Condomínio) quando só uma pasta combina; contratos e aditivos usam nome em MAIÚSCULAS. Se nada combinar, cria.
+- **Nome dos arquivos:** `{Cliente}-{Tipo}-{numero}-DIBREVA.pdf` e `.html`.
+- **Credenciais:** projeto Google Cloud `dibreva-crm` (conta pessoal da Vanessa), cliente OAuth "DIBREVA CRM Web", app em modo teste com usuárias `dibrevaltda@gmail.com` e `lobo.nessa13@gmail.com`. Drive autorizado com **dibrevaltda@gmail.com**. Variáveis na Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (JWT legacy, começa com `eyJ`), `APP_URL`.
+- **Banco:** `sql/migration-drive.sql` (tabela `integracoes` + colunas `drive_*`/`publicado_em` em `documentos`).
+
 ## Custo
 
 Modelo padrão `claude-sonnet-5` (definido em `js/ia.js`). Cada geração ou alteração via chat usa por volta de 8 a 12 mil tokens de entrada e 2 a 4 mil de saída (aprox. US$ 0,03 a 0,06 por chamada). Edições manuais custam zero. O prompt base tem cache ativado.
