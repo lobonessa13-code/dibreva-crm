@@ -155,9 +155,23 @@ async function buscarPasta(token, nome, parentId, { regex } = {}) {
   const j = await driveFetch(token, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q.join(' and '))}&fields=files(id,name)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true`);
   const arquivos = j.files || [];
   if (regex) return arquivos.find(f => regex.test(f.name)) || null;
-  // Busca exata primeiro, depois sem diferenciar maiúsculas/acentos
-  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  return arquivos.find(f => f.name === nome) || arquivos.find(f => norm(f.name) === norm(nome)) || null;
+  // 1) exata; 2) sem maiúsculas/acentos; 3) pelo "nome-chave" do cliente (ignora palavras
+  // genéricas como Residencial, Edifício, EDF, Condomínio), desde que só UMA pasta combine.
+  // Ex.: "Residencial Helena" reaproveita a pasta "HELENA - EDF".
+  const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const exata = arquivos.find(f => f.name === nome) || arquivos.find(f => norm(f.name) === norm(nome));
+  if (exata) return exata;
+  const chave = chaveCliente(nome);
+  if (chave.length >= 4) {
+    const candidatos = arquivos.filter(f => { const c = chaveCliente(f.name); return c && (c === chave || c.includes(chave) || chave.includes(c)); });
+    if (candidatos.length === 1) return candidatos[0];
+  }
+  return null;
+}
+
+const PALAVRAS_GENERICAS = new Set(['residencial', 'res', 'edificio', 'edf', 'ed', 'condominio', 'cond', 'predio', 'torre', 'ltda', 'me', 'sa', 'de', 'do', 'da', 'dos', 'das', 'e', 'o', 'a']);
+function chaveCliente(nome) {
+  return String(nome).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(w => w && !PALAVRAS_GENERICAS.has(w)).join(' ');
 }
 
 async function criarPasta(token, nome, parentId) {
