@@ -91,7 +91,8 @@ BEGIN
     'clientes', 'aditivos', 'notificacoes_log',
     'leads_raw', 'lead_interacoes',
     'followup_log',
-    'documentos', 'documentos_contadores'
+    'documentos', 'documentos_contadores',
+    'tarefas', 'tarefa_comentarios'
   ] LOOP
     IF to_regclass('public.' || t) IS NULL THEN
       RAISE NOTICE 'Tabela % não existe, pulando', t;
@@ -119,7 +120,8 @@ DO $$
 DECLARE v TEXT;
 BEGIN
   FOREACH v IN ARRAY ARRAY[
-    'vw_inadimplentes', 'vw_followup_comercial', 'vw_followup_kpis', 'vw_documentos'
+    'vw_inadimplentes', 'vw_inadimplentes_kpis', 'vw_crm_kpis', 'vw_obras_kpis',
+    'vw_followup_comercial', 'vw_followup_kpis', 'vw_documentos'
   ] LOOP
     IF to_regclass('public.' || v) IS NOT NULL THEN
       EXECUTE format('ALTER VIEW public.%I SET (security_invoker = on)', v);
