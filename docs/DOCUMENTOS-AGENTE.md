@@ -62,6 +62,12 @@ Efeitos ao salvar:
 
 Regras que o agente segue (mesmas das memórias do terminal): itens de serviço em linguagem direta, lavação como Etapa 1 (exceto quando há remoção de cerâmicas), observações padrão, marcas de tinta premium sempre que há pintura, frase final de negociação, entrada no percentual exato, prazo em dias úteis, sem seção de autopromoção, sem travessões, validade de 30 dias. Cláusulas jurídicas do contrato e do aditivo são fixas no template (carga horária, redes de proteção, multa 2%, garantia 24 meses, assinatura digital, foro Criciúma).
 
+## Histórico importado e biblioteca de exemplos
+
+Em 2026-09-04 foram importados para a tabela `documentos` os documentos feitos no terminal: 57 orçamentos, 8 contratos, 6 aditivos e 40 recibos (extraídos dos HTML em `DIBREVA/Orcamentos`, `Contratos`, `Aditivos`, `Recibos`). Números originais preservados quando únicos; os demais receberam `PREFIXO-ANO-Hnn` (H de histórico), com o número impresso guardado em `dados.numero_original`. Contadores ajustados para continuar a sequência (ORC 53, CTR 23, ADT 2, RCB 13 em 2026).
+
+`js/biblioteca-exemplos.js` (gerado por `scratchpad/importacao/gerar-biblioteca.js`) resume esses documentos por categoria de serviço (etapas e itens reais) e é injetado no prompt do agente (bloco em cache, ~7 mil tokens). O agente usa `buscar_documentos` para abrir qualquer documento completo.
+
 ## Paginação
 
 `DocTemplates.renderAsync` mede cada bloco num iframe oculto (mesmo CSS, fontes carregadas), distribui os blocos pelas páginas com as alturas reais e depois ajusta: página apertada recebe `.compacto` / `.compacto2`; página de etapas com sobra grande recebe `.folgada`. O HTML baixado já vem paginado e pode ser conferido com `DIBREVA/scripts/validar-documento.js`.

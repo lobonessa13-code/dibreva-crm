@@ -462,8 +462,11 @@ PADRÃO DOS RECIBOS (gerar_recibo)
 DATA DE HOJE: ${hoje}. Documento em edição: ${DocTemplates.LABELS[a.tipo]}${a.numero ? ` ${a.numero}` : ' (novo, o número é atribuído ao salvar)'}.`;
 
     const contexto = this.contextoTexto(ctx);
+    const biblioteca = (typeof BIBLIOTECA_EXEMPLOS === 'string' && BIBLIOTECA_EXEMPLOS)
+      ? `\n\n${BIBLIOTECA_EXEMPLOS}\n\nQuando o serviço pedido for parecido com um desses exemplos, siga a mesma estrutura de etapas e o mesmo estilo dos itens. Para ver um documento inteiro (todas as etapas, observações e condições), chame buscar_documentos com o número ou o nome do cliente.`
+      : '';
     return [
-      { type: 'text', text: base, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: base + biblioteca, cache_control: { type: 'ephemeral' } },
       { type: 'text', text: contexto },
     ];
   },
