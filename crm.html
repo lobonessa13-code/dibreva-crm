@@ -6,7 +6,7 @@
   <title>DIBREVA CRM - Pipeline de Vendas</title>
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/components.css?v=2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -46,6 +46,9 @@
       <div class="kpi-card"><div class="kpi-label">Follow-up Pendente</div><div class="kpi-value warning" id="kpi-negociacao">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Aprovados no Mês</div><div class="kpi-value success" id="kpi-aprovados">—</div></div>
     </div>
+
+    <!-- Alerta: orçamentos que precisam de nova mensagem -->
+    <div class="followup-banner" id="followup-banner" style="display:none;"></div>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -133,6 +136,7 @@
               <th onclick="CRM.sort('nome_contato')">Contato &#8597;</th>
               <th onclick="CRM.sort('valor_estimado')">Valor &#8597;</th>
               <th onclick="CRM.sort('status')">Status</th>
+              <th onclick="CRM.sort('data_envio_orcamento')">Envio Orçamento &#8597;</th>
               <th onclick="CRM.sort('proxima_acao')">Próxima Ação</th>
               <th>Ações</th>
             </tr>
@@ -451,7 +455,7 @@
   <script src="js/db.js?v=10"></script>
   <script src="js/ui.js?v=10"></script>
   <script src="js/nav.js?v=14"></script>
-  <script src="js/crm.js?v=99"></script>
+  <script src="js/crm.js?v=100"></script>
   <script>
     try {
       document.getElementById('sidebar').innerHTML = renderSidebar('crm');

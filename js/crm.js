@@ -27,6 +27,7 @@ const CRM = {
       await this.loadData();
       this.renderKPIs();
       this.renderPipeline();
+      this.renderAlertaBanner();
       this.renderTable();
       this.renderCharts();
       this.setupStatusAutoDate();
@@ -113,6 +114,7 @@ const CRM = {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     ${l.proxima_acao || '—'}
                   </div>
+                  ${this.htmlAlertaFollowup(l)}
                 </div>
               `).join('')
             }
@@ -151,7 +153,7 @@ const CRM = {
     const { items, totalPages } = UI.paginate(this.filtered, this.page, this.perPage);
 
     document.getElementById('table-body').innerHTML = items.length === 0
-      ? '<tr><td colspan="7" class="empty-state"><p>Nenhum lead encontrado</p></td></tr>'
+      ? '<tr><td colspan="8" class="empty-state"><p>Nenhum lead encontrado</p></td></tr>'
       : items.map(l => `
         <tr>
           <td><strong>${l.condominio}</strong></td>
@@ -159,7 +161,8 @@ const CRM = {
           <td>${l.nome_contato || '—'}</td>
           <td>${l.valor_estimado > 0 ? UI.moeda(l.valor_estimado) : '—'}</td>
           <td>${UI.statusBadge(l.status)}</td>
-          <td>${l.proxima_acao || '—'}</td>
+          <td>${l.data_envio_orcamento ? this.fmtData(this.dataLocal(l.data_envio_orcamento)) : '—'}</td>
+          <td>${l.proxima_acao || '—'}${(() => { const a = this.alertaFollowup(l); return a && a.nivel !== 'sem_data' ? `<div class="fu-alerta fu-${a.nivel}">${a.texto}</div>` : ''; })()}</td>
           <td>
             <div class="table-actions">
               <a class="btn btn-sm btn-secondary btn-icon" title="Gerar orçamento com o agente" href="documentos.html?novo=orcamento&lead_id=${l.id}">
@@ -314,13 +317,75 @@ const CRM = {
     { qtd: 3, diasMinimos: 30, fase: 'fechamento', label: 'Fechamento' }
   ],
 
+  // "2026-09-23" -> Date local (evita o fuso UTC que volta um dia)
+  dataLocal(str) {
+    if (!str) return null;
+    const [a, m, d] = String(str).slice(0, 10).split('-').map(Number);
+    return new Date(a, m - 1, d);
+  },
+
+  fmtData(d) {
+    return d ? d.toLocaleDateString('pt-BR') : '—';
+  },
+
+  // Quando deve sair a próxima mensagem de um orçamento enviado.
+  // nivel: atrasado | hoje | agendado | pausado | concluido | null (não se aplica)
+  alertaFollowup(l) {
+    if (!['orcamento_enviado', 'followup_orcamento'].includes(l.status)) return null;
+    const envio = this.dataLocal(l.data_envio_orcamento);
+    if (!envio) return { nivel: 'sem_data', texto: 'Preencha a data de envio do orçamento' };
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const diasDesdeEnvio = Math.round((hoje - envio) / 86400000);
+    const base = { envio, diasDesdeEnvio };
+
+    if (l.followup_ativo === false) return { ...base, nivel: 'pausado', texto: 'Follow-up pausado' };
+    const etapa = this.followupCadencia.find(c => c.qtd === (l.qtd_followups_enviados || 0));
+    if (!etapa) return { ...base, nivel: 'concluido', texto: 'Cadência concluída: decidir aprovado ou perdido' };
+
+    // Data da régua, respeitando o intervalo mínimo de 48h após a última mensagem
+    let prox = new Date(envio); prox.setDate(prox.getDate() + etapa.diasMinimos);
+    if (l.ultimo_followup_em) {
+      const minimo = new Date(l.ultimo_followup_em); minimo.setHours(0, 0, 0, 0);
+      minimo.setDate(minimo.getDate() + 2);
+      if (minimo > prox) prox = minimo;
+    }
+    const diasPara = Math.round((prox - hoje) / 86400000);
+
+    if (diasPara < 0) return { ...base, etapa, prox, nivel: 'atrasado', texto: `Enviar ${etapa.label.toLowerCase()}: atrasado ${-diasPara} dia(s)` };
+    if (diasPara === 0) return { ...base, etapa, prox, nivel: 'hoje', texto: `Enviar ${etapa.label.toLowerCase()} hoje` };
+    return { ...base, etapa, prox, nivel: 'agendado', texto: `${etapa.label} em ${this.fmtData(prox)} (${diasPara} dia(s))` };
+  },
+
+  // HTML do bloco "enviado em + alerta" usado no card do pipeline e na tabela
+  htmlAlertaFollowup(l) {
+    const a = this.alertaFollowup(l);
+    if (!a) return '';
+    const envio = a.envio
+      ? `<div class="fu-envio">Orçamento enviado em ${this.fmtData(a.envio)} · há ${a.diasDesdeEnvio} dia(s)</div>`
+      : '';
+    return `${envio}<div class="fu-alerta fu-${a.nivel}">${a.texto}</div>`;
+  },
+
+  renderAlertaBanner() {
+    const el = document.getElementById('followup-banner');
+    if (!el) return;
+    const pendentes = this.leads
+      .map(l => ({ l, a: this.alertaFollowup(l) }))
+      .filter(x => x.a && ['atrasado', 'hoje'].includes(x.a.nivel));
+    if (pendentes.length === 0) { el.style.display = 'none'; return; }
+    const nomes = pendentes.slice(0, 4).map(x => x.l.condominio).join(', ');
+    const resto = pendentes.length > 4 ? ` e mais ${pendentes.length - 4}` : '';
+    el.innerHTML = `
+      <strong>${pendentes.length} orçamento(s) precisam de nova mensagem:</strong> ${nomes}${resto}.
+      <button class="btn btn-sm btn-primary" onclick="CRM.switchTab('comercial')">Ver no Comercial</button>`;
+    el.style.display = 'flex';
+  },
+
   proximoPasso(f) {
-    if (!f.followup_ativo) return { texto: 'Automação pausada', cor: 'var(--cinza)' };
-    const etapa = this.followupCadencia.find(c => c.qtd === (f.qtd_followups_enviados || 0));
-    if (!etapa) return { texto: 'Cadência concluída', cor: 'var(--cinza)' };
-    const diasFaltando = etapa.diasMinimos - f.dias_desde_envio;
-    if (diasFaltando <= 0) return { texto: `${etapa.label} (hoje às 10h)`, cor: 'var(--warning, #D37E53)' };
-    return { texto: `${etapa.label} em ${diasFaltando} dia(s)`, cor: 'var(--cinza-escuro, inherit)' };
+    const a = this.alertaFollowup({ ...f, status: f.status || 'orcamento_enviado' });
+    const cores = { atrasado: 'var(--danger, #C43B3B)', hoje: 'var(--warning, #D37E53)' };
+    return { texto: a ? a.texto : '—', cor: cores[a?.nivel] || 'var(--cinza)' };
   },
 
   async renderComercial() {
@@ -359,7 +424,7 @@ const CRM = {
           <td><strong>${f.condominio}</strong><br><small style="color:var(--cinza);">${f.tipo_servico || ''}</small></td>
           <td>${f.nome_contato || '—'}<br><small style="color:var(--cinza);">${f.telefone || 'sem telefone'}</small></td>
           <td>${f.valor_estimado > 0 ? UI.moeda(f.valor_estimado) : '—'}</td>
-          <td>${UI.data ? UI.data(f.data_envio_orcamento) : f.data_envio_orcamento}<br><small style="color:var(--cinza);">há ${f.dias_desde_envio} dia(s)</small></td>
+          <td>${this.fmtData(this.dataLocal(f.data_envio_orcamento))}<br><small style="color:var(--cinza);">há ${f.dias_desde_envio} dia(s)</small></td>
           <td>${f.qtd_followups_enviados || 0} de 4<br><small style="color:var(--cinza);">último: ${ultimoEnvio}</small></td>
           <td style="color:${passo.cor};">${passo.texto}</td>
           <td>
@@ -468,6 +533,7 @@ const CRM = {
       await this.loadData();
       this.renderComercial();
       this.renderPipeline();
+      this.renderAlertaBanner();
     } catch (err) {
       UI.error('Erro ao enviar: ' + err.message);
     }
@@ -477,6 +543,9 @@ const CRM = {
     try {
       await DB.update('leads', leadId, { followup_ativo: ativo });
       UI.success(ativo ? 'Automação reativada para este lead' : 'Automação pausada para este lead');
+      await this.loadData();
+      this.renderPipeline();
+      this.renderAlertaBanner();
       this.renderComercial();
     } catch (err) {
       UI.error('Erro ao atualizar: ' + err.message);
@@ -619,6 +688,7 @@ const CRM = {
       await this.loadData();
       this.renderKPIs();
       this.renderPipeline();
+      this.renderAlertaBanner();
       this.renderTable();
     } catch (err) {
       UI.error('Erro ao salvar: ' + err.message);
@@ -633,6 +703,7 @@ const CRM = {
       await this.loadData();
       this.renderKPIs();
       this.renderPipeline();
+      this.renderAlertaBanner();
       this.renderTable();
     } catch (err) {
       UI.error('Erro ao excluir: ' + err.message);
@@ -710,6 +781,7 @@ const CRM = {
       await this.loadData();
       this.renderKPIs();
       this.renderPipeline();
+      this.renderAlertaBanner();
       this.renderTable();
     } catch (err) {
       UI.error('Erro na conversão: ' + err.message);
