@@ -4,7 +4,8 @@
 // Executado via pg_cron (~11h UTC = 8h Brasília)
 //
 // Usa a mesma régua do CRM (js/crm.js → alertaFollowup) e da
-// verificar-followups: dia 2, 7, 15 e 30 após o envio, 48h entre msgs.
+// verificar-followups: dia 1, 7, 15 e 30 após o envio, 48h entre msgs,
+// ou a data de retomada combinada com o cliente (data_retomar_contato).
 //
 // Canais (cada um só é usado se os secrets existirem):
 //   Telegram → TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
@@ -27,10 +28,11 @@ interface LeadFollowup {
   followup_ativo: boolean
   qtd_followups_enviados: number | null
   ultimo_followup_em: string | null
+  data_retomar_contato: string | null
 }
 
 const CADENCIA = [
-  { qtd: 0, diasMinimos: 2,  label: 'confirmação' },
+  { qtd: 0, diasMinimos: 1,  label: 'confirmação' },
   { qtd: 1, diasMinimos: 7,  label: 'dúvidas' },
   { qtd: 2, diasMinimos: 15, label: 'reforço' },
   { qtd: 3, diasMinimos: 30, label: 'fechamento' },
@@ -56,6 +58,10 @@ function fmt(ms: number): string {
 }
 
 function proximaMensagem(l: LeadFollowup, hoje: number) {
+  if (l.data_retomar_contato) {
+    const prox = Date.parse(l.data_retomar_contato)
+    return { etapa: { qtd: -1, diasMinimos: 0, label: 'retomar contato' }, prox, diasPara: Math.round((prox - hoje) / DIA_MS) }
+  }
   const etapa = CADENCIA.find(c => c.qtd === (l.qtd_followups_enviados || 0))
   if (!etapa) return null
   let prox = Date.parse(l.data_envio_orcamento) + etapa.diasMinimos * DIA_MS

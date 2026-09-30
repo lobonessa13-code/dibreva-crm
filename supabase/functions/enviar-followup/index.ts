@@ -183,6 +183,11 @@ serve(async (req) => {
       qtd_followups_enviados: (lead.qtd_followups_enviados || 0) + 1,
       ultimo_followup_em: new Date().toISOString()
     }
+    // Retomada combinada com o cliente: depois da reativação a régua fica concluída
+    if (body.fase === 'reativacao' && lead.data_retomar_contato) {
+      updates.data_retomar_contato = null
+      updates.qtd_followups_enviados = Math.max(updates.qtd_followups_enviados as number, 4)
+    }
     // Primeiro follow-up move o lead para a etapa de acompanhamento no pipeline
     if (lead.status === 'orcamento_enviado') updates.status = 'followup_orcamento'
 

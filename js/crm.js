@@ -311,7 +311,7 @@ const CRM = {
 
   // Cadência automática: mesma regra da Edge Function verificar-followups
   followupCadencia: [
-    { qtd: 0, diasMinimos: 2,  fase: 'confirmacao', label: 'Confirmação' },
+    { qtd: 0, diasMinimos: 1,  fase: 'confirmacao', label: 'Confirmação' },
     { qtd: 1, diasMinimos: 7,  fase: 'duvidas', label: 'Dúvidas' },
     { qtd: 2, diasMinimos: 15, fase: 'reforco', label: 'Reforço' },
     { qtd: 3, diasMinimos: 30, fase: 'fechamento', label: 'Fechamento' }
@@ -340,6 +340,16 @@ const CRM = {
     const base = { envio, diasDesdeEnvio };
 
     if (l.followup_ativo === false) return { ...base, nivel: 'pausado', texto: 'Follow-up pausado' };
+
+    // Cliente pediu para chamar em outra data: a régua fica suspensa até lá
+    const retomar = this.dataLocal(l.data_retomar_contato);
+    if (retomar) {
+      const etapa = { fase: 'reativacao', label: 'Retomar contato' };
+      const dias = Math.round((retomar - hoje) / 86400000);
+      if (dias < 0) return { ...base, etapa, prox: retomar, nivel: 'atrasado', texto: `Retomar contato: atrasado ${-dias} dia(s)` };
+      if (dias === 0) return { ...base, etapa, prox: retomar, nivel: 'hoje', texto: 'Retomar contato hoje' };
+      return { ...base, etapa, prox: retomar, nivel: 'agendado', texto: `Retomar contato em ${this.fmtData(retomar)}` };
+    }
     const etapa = this.followupCadencia.find(c => c.qtd === (l.qtd_followups_enviados || 0));
     if (!etapa) return { ...base, nivel: 'concluido', texto: 'Cadência concluída: decidir aprovado ou perdido' };
 
@@ -425,7 +435,7 @@ const CRM = {
           <td>${f.nome_contato || '—'}<br><small style="color:var(--cinza);">${f.telefone || 'sem telefone'}</small></td>
           <td>${f.valor_estimado > 0 ? UI.moeda(f.valor_estimado) : '—'}</td>
           <td>${this.fmtData(this.dataLocal(f.data_envio_orcamento))}<br><small style="color:var(--cinza);">há ${f.dias_desde_envio} dia(s)</small></td>
-          <td>${f.qtd_followups_enviados || 0} de 4<br><small style="color:var(--cinza);">último: ${ultimoEnvio}</small></td>
+          <td>${f.qtd_followups_enviados || 0} enviado(s)<br><small style="color:var(--cinza);">último: ${ultimoEnvio}</small></td>
           <td style="color:${passo.cor};">${passo.texto}</td>
           <td>
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
@@ -437,6 +447,9 @@ const CRM = {
             <div class="table-actions">
               <button class="btn btn-sm btn-primary btn-icon" title="Enviar follow-up agora" ${f.telefone ? '' : 'disabled'} onclick="CRM.openFollowup('${f.lead_id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <button class="btn btn-sm btn-secondary btn-icon" title="Cliente pediu para chamar em outra data" onclick="CRM.openRetomar('${f.lead_id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </button>
               <button class="btn btn-sm btn-secondary btn-icon" title="Histórico de follow-ups" onclick="CRM.openFollowupHistorico('${f.lead_id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -490,7 +503,9 @@ const CRM = {
       `${f.nome_contato || 'Sem contato'} · ${f.telefone || 'sem telefone'} · ${f.qtd_followups_enviados || 0} follow-up(s) já enviado(s)`;
 
     // Sugere a fase da vez conforme a cadência
-    const etapa = this.followupCadencia.find(c => c.qtd === (f.qtd_followups_enviados || 0));
+    const etapa = f.data_retomar_contato
+      ? { fase: 'reativacao' }
+      : this.followupCadencia.find(c => c.qtd === (f.qtd_followups_enviados || 0));
     document.getElementById('followup-fase').value = etapa ? etapa.fase : 'manual';
     this.updateFollowupTemplate();
     UI.openModal('modal-followup');
@@ -550,6 +565,57 @@ const CRM = {
     } catch (err) {
       UI.error('Erro ao atualizar: ' + err.message);
       this.renderComercial();
+    }
+  },
+
+  // ===== Retomar contato em outra data (6 meses a 1 ano) =====
+
+  isoLocal(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  },
+
+  maisMeses(meses) {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    d.setMonth(d.getMonth() + meses);
+    return d;
+  },
+
+  openRetomar(leadId) {
+    const f = this.followups.find(x => x.lead_id === leadId);
+    if (!f) return;
+    document.getElementById('retomar-lead-id').value = leadId;
+    document.getElementById('retomar-condominio').textContent = f.condominio;
+    const input = document.getElementById('retomar-data');
+    input.min = this.isoLocal(this.maisMeses(6));
+    input.max = this.isoLocal(this.maisMeses(12));
+    input.value = f.data_retomar_contato ? String(f.data_retomar_contato).slice(0, 10) : input.min;
+    document.getElementById('retomar-cancelar').style.display = f.data_retomar_contato ? '' : 'none';
+    UI.openModal('modal-retomar');
+  },
+
+  setRetomar(meses) {
+    document.getElementById('retomar-data').value = this.isoLocal(this.maisMeses(meses));
+  },
+
+  async salvarRetomar(limpar = false) {
+    const leadId = document.getElementById('retomar-lead-id').value;
+    const input = document.getElementById('retomar-data');
+    const data = limpar ? null : input.value;
+    if (!limpar && (!data || data < input.min || data > input.max)) {
+      return UI.warning('Escolha uma data entre 6 meses e 1 ano a partir de hoje');
+    }
+    try {
+      const campos = { data_retomar_contato: data };
+      if (data) campos.proxima_acao = `Retomar contato em ${this.fmtData(this.dataLocal(data))}`;
+      await DB.update('leads', leadId, campos);
+      UI.success(limpar ? 'Retomada cancelada: a régua normal voltou a valer' : `Contato agendado para ${this.fmtData(this.dataLocal(data))}`);
+      UI.closeModal('modal-retomar');
+      await this.loadData();
+      this.renderPipeline();
+      this.renderAlertaBanner();
+      this.renderComercial();
+    } catch (err) {
+      UI.error('Erro ao agendar retomada: ' + err.message);
     }
   },
 
