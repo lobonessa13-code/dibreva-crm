@@ -23,6 +23,7 @@ const CRM = {
   ],
 
   async init() {
+    Cidades.ligar('lead-cidade');
     try {
       await this.loadData();
       this.renderKPIs();
@@ -255,7 +256,7 @@ const CRM = {
 
     const cidadeValor = {};
     this.leads.filter(l => l.status !== 'perdido').forEach(l => {
-      const cidade = l.cidade || 'Sem cidade';
+      const cidade = Cidades.normalizar(l.cidade) || 'Sem cidade';
       cidadeValor[cidade] = (cidadeValor[cidade] || 0) + (l.valor_estimado || 0);
     });
 
@@ -713,7 +714,7 @@ const CRM = {
   async save() {
     const id = document.getElementById('lead-id').value;
     const condominio = document.getElementById('lead-condominio').value.trim();
-    const cidade = document.getElementById('lead-cidade').value.trim();
+    const cidade = Cidades.normalizar(document.getElementById('lead-cidade').value);
     const tipo_servico = document.getElementById('lead-tipo-servico').value;
     const valor_estimado = parseFloat(document.getElementById('lead-valor').value) || 0;
     const status = document.getElementById('lead-status').value;

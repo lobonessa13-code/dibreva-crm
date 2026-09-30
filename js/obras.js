@@ -13,6 +13,7 @@ const OBRAS = {
   ],
 
   async init() {
+    Cidades.ligar('obra-cidade');
     try {
       await this.loadData();
       this.renderKPIs();
@@ -234,7 +235,7 @@ const OBRAS = {
       condominio,
       cliente,
       cnpj: document.getElementById('obra-cnpj').value.trim() || null,
-      cidade: document.getElementById('obra-cidade').value.trim() || null,
+      cidade: Cidades.normalizar(document.getElementById('obra-cidade').value) || null,
       valor_fechado: parseFloat(document.getElementById('obra-valor').value) || 0,
       data_inicio: document.getElementById('obra-data-inicio').value || null,
       prazo_dias: parseInt(document.getElementById('obra-prazo').value) || 90,

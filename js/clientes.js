@@ -7,6 +7,7 @@ const CLI = {
   perPage: 10,
 
   async init() {
+    Cidades.ligar('cliente-cidade');
     try {
       await this.loadData();
       this.renderKPIs();
@@ -200,7 +201,7 @@ const CLI = {
       endereco_numero: document.getElementById('cliente-numero').value.trim() || null,
       endereco_complemento: document.getElementById('cliente-complemento').value.trim() || null,
       endereco_bairro: document.getElementById('cliente-bairro').value.trim() || null,
-      endereco_cidade: document.getElementById('cliente-cidade').value.trim() || null,
+      endereco_cidade: Cidades.normalizar(document.getElementById('cliente-cidade').value) || null,
       endereco_uf: document.getElementById('cliente-uf').value.trim().toUpperCase() || null,
       endereco_cep: document.getElementById('cliente-cep').value.trim() || null,
       nome_responsavel: document.getElementById('cliente-responsavel').value.trim() || null,
